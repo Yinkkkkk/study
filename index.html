@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🎯 可编辑 · 上瘾积分系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            margin: 0;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        /* 头部工具栏 */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .edit-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            font-size: 1.3rem;
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .edit-btn:active { background: #2c3e50; }
+        /* 积分看板 */
+        .scoreboard {
+            background: linear-gradient(145deg, #2c3e50, #1e2b37);
+            color: white;
+            padding: 24px 20px;
+            border-radius: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .scoreboard h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        .scoreboard .points {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 8px 0 4px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        /* 通用卡片 */
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 6px solid #ffb347;
+            padding-left: 16px;
+        }
+        /* 列表项 */
+        .list-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .list-item {
+            background: #f8f9fc;
+            border-radius: 20px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e9ecf0;
+            transition: all 0.1s ease;
+        }
+        .list-item:active {
+            background: #e9ecf0;
+            transform: scale(0.99);
+        }
+        .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .item-name {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        .item-points {
+            font-size: 1rem;
+            color: #f39c12;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .button {
+            background: #2c3e50;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 12px 22px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 100px;
+            text-align: center;
+        }
+        .button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button.primary { background: #e67e22; }
+        .button.secondary { background: #3498db; }
+        .button:disabled {
+            opacity: 0.4;
+            transform: none;
+            pointer-events: none;
+        }
+        /* 转盘区域 */
+        .wheel-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            margin-top: 10px;
+        }
+        .wheel-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+        }
+        .wheel-result {
+            background: #ecf0f1;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto;
+            border: 2px dashed #b0bec5;
+        }
+        .footer-note {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* ---------- 编辑模态框样式 ---------- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 40px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px 24px;
+            box-shadow: 0 25px 50px -8px black;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .edit-section {
+            margin-bottom: 32px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        .edit-section h4 {
+            font-size: 1.4rem;
+            margin: 0 0 16px 0;
+            color: #34495e;
+        }
+        .edit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f0f3f8;
+            border-radius: 60px;
+            padding: 8px 16px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .edit-item input {
+            flex: 1 1 200px;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 40px;
+            font-size: 1rem;
+            background: white;
+            border: 1px solid #ccd7e4;
+        }
+        .edit-item input[type="number"] { width: 100px; flex: 0 1 100px; }
+        .edit-item button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .add-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 12px 22px;
+            font-size: 1rem;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 30px;
+        }
+        .modal-actions button {
+            padding: 16px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 60px;
+            background: #b0bec5;
+        }
+        .modal-actions .save-btn {
+            background: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 顶部栏：积分 + 编辑按钮 -->
+    <div class="header-bar">
+        <div style="font-size:1.4rem; font-weight:600;">🏆 学习银行</div>
+        <button class="edit-btn" id="openEditorBtn">✎ 编辑</button>
+    </div>
+
+    <!-- 积分看板 -->
+    <div class="scoreboard">
+        <h2>💰 当前积分</h2>
+        <div class="points" id="pointsDisplay">0</div>
+        <div style="opacity:0.7;">多劳多得 · 自定义一切</div>
+    </div>
+
+    <!-- 任务卡片 -->
+    <div class="card">
+        <div class="card-title">📋 重复任务</div>
+        <div class="list-grid" id="taskList"></div>
+        <hr>
+        <div style="color:#5d6d7e; padding:8px 0;">⚡ 点击【完成】获得积分，可反复完成。</div>
+    </div>
+
+    <!-- 商城卡片 -->
+    <div class="card">
+        <div class="card-title">🏪 积分商城</div>
+        <div class="list-grid" id="shopList"></div>
+        <hr>
+        <div style="color:#5d6d7e;">✨ 兑换后积分减少，所有物品不限次数。</div>
+    </div>
+
+    <!-- 转盘卡片 -->
+    <div class="card">
+        <div class="card-title">🎲 幸运大转盘</div>
+        <div class="wheel-area">
+            <div class="wheel-buttons">
+                <button class="button secondary" id="freeSpinBtn">🆓 免费转动 (每日一次)</button>
+                <button class="button primary" id="paidSpinBtn">💰 付费转动 (20积分)</button>
+            </div>
+            <div class="wheel-result" id="spinResult">✨ 点击转盘试试手气</div>
+            <div style="font-size:0.9rem; background:#fdebd0; padding:10px 18px; border-radius:30px;">
+                🎁 当前奖项：<span id="prizeListDisplay"></span>
+            </div>
+        </div>
+    </div>
+    <div class="footer-note">⭐ 所有数据自动保存 · 点击编辑按钮自定义任务/商城/转盘</div>
+</div>
+
+<!-- 编辑模态框 -->
+<div class="modal-overlay" id="editorModal">
+    <div class="modal-content">
+        <h3>⚙️ 编辑配置</h3>
+
+        <!-- 任务编辑区 -->
+        <div class="edit-section" id="editTasksSection">
+            <h4>📋 任务列表 (名称, 积分)</h4>
+            <div id="editTasksContainer"></div>
+            <button class="add-btn" id="addTaskBtn">➕ 添加任务</button>
+        </div>
+
+        <!-- 商城编辑区 -->
+        <div class="edit-section" id="editShopSection">
+            <h4>🏪 商城物品 (名称, 积分)</h4>
+            <div id="editShopContainer"></div>
+            <button class="add-btn" id="addShopBtn">➕ 添加商品</button>
+        </div>
+
+        <!-- 转盘奖项编辑区 (简单列表，可重复) -->
+        <div class="edit-section" id="editSpinSection">
+            <h4>🎲 转盘奖项 (积分值，可重复以调概率)</h4>
+            <div id="editSpinContainer"></div>
+            <button class="add-btn" id="addSpinBtn">➕ 添加奖项</button>
+        </div>
+
+        <div class="modal-actions">
+            <button id="cancelEditorBtn">取消</button>
+            <button class="save-btn" id="saveEditorBtn">保存修改</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 默认数据 ----------
+        const DEFAULT_TASKS = [
+            { name: '📖 英语 25min', points: 10 },
+            { name: '🇪🇸 西班牙语 25min', points: 10 },
+            { name: '🇮🇹 意大利语 25min', points: 10 },
+            { name: '💻 编程 25min', points: 15 },
+            { name: '🧠 心理学 25min', points: 10 },
+            { name: '🎬 看外语电影 (原声)', points: 20 }
+        ];
+        const DEFAULT_SHOP = [
+            { name: '🧋 奶茶/果茶', pointsCost: 30 },
+            { name: '🎮 1小时游戏时间', pointsCost: 40 },
+            { name: '📖 小说章节/有声书', pointsCost: 15 },
+            { name: '🍿 综艺切片 20min', pointsCost: 25 },
+            { name: '🍕 异国料理基金', pointsCost: 60 },
+            { name: '💤 免做卡 (一次)', pointsCost: 50 }
+        ];
+        const DEFAULT_SPIN_PRIZES = [5, 10, 20, 50, 0, 10, 5, 15];
+
+        // 付费转盘所需积分
+        const SPIN_COST = 20;
+
+        // ---------- 全局变量 ----------
+        let totalPoints = 100;                 // 当前积分
+        let lastFreeSpinDate = '';              // 上次免费转盘日期 YYYY-MM-DD
+        let tasks = [];                         // 当前任务
+        let shopItems = [];                      // 当前商城
+        let spinPrizes = [];                      // 当前转盘奖项数组
+
+        // DOM 元素
+        const pointsDisplay = document.getElementById('pointsDisplay');
+        const taskContainer = document.getElementById('taskList');
+        const shopContainer = document.getElementById('shopList');
+        const spinResultDiv = document.getElementById('spinResult');
+        const freeSpinBtn = document.getElementById('freeSpinBtn');
+        const paidSpinBtn = document.getElementById('paidSpinBtn');
+        const prizeListSpan = document.getElementById('prizeListDisplay');
+
+        // 编辑器相关
+        const modalOverlay = document.getElementById('editorModal');
+        const openEditorBtn = document.getElementById('openEditorBtn');
+        const cancelEditorBtn = document.getElementById('cancelEditorBtn');
+        const saveEditorBtn = document.getElementById('saveEditorBtn');
+        const editTasksContainer = document.getElementById('editTasksContainer');
+        const editShopContainer = document.getElementById('editShopContainer');
+        const editSpinContainer = document.getElementById('editSpinContainer');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const addShopBtn = document.getElementById('addShopBtn');
+        const addSpinBtn = document.getElementById('addSpinBtn');
+
+        // ---------- 本地存储读写 ----------
+        function loadData() {
+            try {
+                // 积分与转盘日期
+                const savedPoints = localStorage.getItem('totalPoints');
+                if (savedPoints !== null) totalPoints = parseInt(savedPoints, 10) || 100;
+                const savedDate = localStorage.getItem('lastFreeSpinDate');
+                if (savedDate) lastFreeSpinDate = savedDate;
+
+                // 任务
+                const savedTasks = localStorage.getItem('tasks');
+                if (savedTasks) tasks = JSON.parse(savedTasks);
+                else tasks = DEFAULT_TASKS.map(t => ({...t}));
+
+                // 商城
+                const savedShop = localStorage.getItem('shopItems');
+                if (savedShop) shopItems = JSON.parse(savedShop);
+                else shopItems = DEFAULT_SHOP.map(s => ({...s}));
+
+                // 转盘奖项
+                const savedSpin = localStorage.getItem('spinPrizes');
+                if (savedSpin) spinPrizes = JSON.parse(savedSpin);
+                else spinPrizes = [...DEFAULT_SPIN_PRIZES];
+            } catch (e) {
+                console.warn('加载失败，使用默认值', e);
+                tasks = DEFAULT_TASKS.map(t => ({...t}));
+                shopItems = DEFAULT_SHOP.map(s => ({...s}));
+                spinPrizes = [...DEFAULT_SPIN_PRIZES];
+            }
+        }
+
+        function saveAllToStorage() {
+            try {
+                localStorage.setItem('totalPoints', totalPoints);
+                localStorage.setItem('lastFreeSpinDate', lastFreeSpinDate);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                localStorage.setItem('shopItems', JSON.stringify(shopItems));
+                localStorage.setItem('spinPrizes', JSON.stringify(spinPrizes));
+            } catch (e) {}
+        }
+
+        // ---------- 辅助函数 ----------
+        function getTodayString() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function isFreeSpinAvailable() {
+            return lastFreeSpinDate !== getTodayString();
+        }
+
+        // ---------- UI 渲染 ----------
+        function updatePointsUI() {
+            pointsDisplay.innerText = totalPoints;
+            saveAllToStorage();
+        }
+
+        function renderTasks() {
+            taskContainer.innerHTML = '';
+            tasks.forEach((task, idx) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-name">${task.name}</span>
+                        <span class="item-points">+${task.points} 积分</span>
+                    </div>
+                    <button class="button task-btn" data-points="${task.points}" data-index="${idx}">✅ 完成</button>
+                `;
+                taskContainer.appendChild(item);
+            });
+            // 绑定完成事件
+            document.querySelectorAll('.task-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const points = parseInt(btn.dataset.points, 10);
+                    totalPoints += points;
+                    updatePointsUI();
+                    btn.style.background = '#27ae60';
+                    setTimeout(() => btn.style.background = '', 150);
+                });
+            });
+        }
+
+        function renderShop() {
+            shopContainer.innerHTML = '';
+            shopItems.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-points">🔻 ${item.pointsCost} 积分</span>
+                    </div>
+                    <button class="button primary shop-btn" data-cost="${item.pointsCost}" data-index="${idx}">🎁 兑换</button>
+                `;
+                shopContainer.appendChild(div);
+            });
+            document.querySelectorAll('.shop-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const cost = parseInt(btn.dataset.cost, 10);
+                    if (totalPoints >= cost) {
+                        totalPoints -= cost;
+                        updatePointsUI();
+                        alert(`✨ 兑换成功！`);
+                    } else {
+                        alert('❌ 积分不足');
+                    }
+                });
+            });
+        }
+
+        function updateSpinButtons() {
+            freeSpinBtn.disabled = !isFreeSpinAvailable();
+            freeSpinBtn.innerText = freeSpinBtn.disabled ? '🆓 免费转动 (今日已用)' : '🆓 免费转动 (今日可用)';
+            if (totalPoints < SPIN_COST) {
+                paidSpinBtn.disabled = true;
+                paidSpinBtn.innerText = `💰 付费转动 (需${SPIN_COST}积分)`;
+            } else {
+                paidSpinBtn.disabled = false;
+                paidSpinBtn.innerText = `💰 付费转动 (${SPIN_COST}积分)`;
+            }
+        }
+
+        function updatePrizeListDisplay() {
+            if (spinPrizes.length === 0) prizeListSpan.innerText = '无奖项';
+            else {
+                const unique = [...new Set(spinPrizes)].sort((a,b)=>a-b);
+                prizeListSpan.innerText = unique.join(', ') + (unique.includes(0)?' (0=谢谢)':'');
+            }
+        }
+
+        // 转盘转动
+        function spinWheel(isFree) {
+            if (isFree) {
+                if (!isFreeSpinAvailable()) { alert('今天免费次数已用完'); return false; }
+                lastFreeSpinDate = getTodayString();
+            } else {
+                if (totalPoints < SPIN_COST) { alert('积分不足'); return false; }
+                totalPoints -= SPIN_COST;
+                updatePointsUI();
+            }
+
+            if (spinPrizes.length === 0) {
+                alert('转盘奖项为空，请先编辑添加');
+                return false;
+            }
+
+            const randomIndex = Math.floor(Math.random() * spinPrizes.length);
+            const prize = spinPrizes[randomIndex];
+            totalPoints += prize;
+            updatePointsUI();
+            spinResultDiv.innerText = prize === 0 ? '🎉 谢谢参与 +0' : `🎉 获得 ${prize} 积分`;
+            spinResultDiv.style.transform = 'scale(1.05)';
+            setTimeout(() => spinResultDiv.style.transform = '', 200);
+            updateSpinButtons();
+            saveAllToStorage();
+            return true;
+        }
+
+        // 刷新所有UI
+        function refreshAllUI() {
+            updatePointsUI();
+            renderTasks();
+            renderShop();
+            updateSpinButtons();
+            updatePrizeListDisplay();
+        }
+
+        // ---------- 编辑器填充与收集 ----------
+        function fillEditor() {
+            // 任务
+            editTasksContainer.innerHTML = '';
+            tasks.forEach((task, index) => {
+                addEditItemRow(editTasksContainer, 'task', index, task.name, task.points);
+            });
+            // 商城
+            editShopContainer.innerHTML = '';
+            shopItems.forEach((item, index) => {
+                addEditItemRow(editShopContainer, 'shop', index, item.name, item.pointsCost);
+            });
+            // 转盘奖项
+            editSpinContainer.innerHTML = '';
+            spinPrizes.forEach((value, index) => {
+                addEditSpinRow(editSpinContainer, index, value);
+            });
+        }
+
+        // 添加一行任务/商城编辑项 (type: 'task' 或 'shop')
+        function addEditItemRow(container, type, index, name, points) {
+            const row = document.createElement('div');
+            row.className = 'edit-item';
+            row.dataset.index = index;
+            row.innerHTML = `
+                <input type="text" class="edit-name" value="${escapeHtml(name)}" placeholder="名称">
+                <input type="number" class="edit-points" value="${points}" min="0" step="1" placeholder="积分">
+                <button class="delete-row" data-type="${type}">🗑 删除</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addEditSpinRow(container, index, value) {
+            const row = document.createElement('div');
+            row.className = 'edit-item';
+            row.dataset.index = index;
+            row.innerHTML = `
+                <input type="number" class="edit-spin-value" value="${value}" min="0" step="1" placeholder="积分值 (0=谢谢)">
+                <button class="delete-spin-row">🗑 删除</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // 简单的转义
+        function escapeHtml(unsafe) {
+            return unsafe.replace(/[&<>"]/g, function(m) {
+                if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; if(m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        // 从编辑器收集数据
+        function collectEditorData() {
+            // 任务
+            const newTasks = [];
+            document.querySelectorAll('#editTasksContainer .edit-item').forEach(row => {
+                const nameInput = row.querySelector('.edit-name');
+                const pointsInput = row.querySelector('.edit-points');
+                if (nameInput && pointsInput) {
+                    const name = nameInput.value.trim();
+                    const points = parseInt(pointsInput.value, 10);
+                    if (name !== '' && !isNaN(points) && points >= 0) {
+                        newTasks.push({ name, points });
+                    }
+                }
+            });
+
+            // 商城
+            const newShop = [];
+            document.querySelectorAll('#editShopContainer .edit-item').forEach(row => {
+                const nameInput = row.querySelector('.edit-name');
+                const pointsInput = row.querySelector('.edit-points');
+                if (nameInput && pointsInput) {
+                    const name = nameInput.value.trim();
+                    const points = parseInt(pointsInput.value, 10);
+                    if (name !== '' && !isNaN(points) && points >= 0) {
+                        newShop.push({ name, pointsCost: points });
+                    }
+                }
+            });
+
+            // 转盘奖项
+            const newSpin = [];
+            document.querySelectorAll('#editSpinContainer .edit-item').forEach(row => {
+                const valInput = row.querySelector('.edit-spin-value');
+                if (valInput) {
+                    const val = parseInt(valInput.value, 10);
+                    if (!isNaN(val)) newSpin.push(val);
+                }
+            });
+
+            return { tasks: newTasks, shop: newShop, spin: newSpin };
+        }
+
+        // ---------- 事件绑定 ----------
+        function init() {
+            loadData();
+            refreshAllUI();
+
+            // 打开编辑器
+            openEditorBtn.addEventListener('click', () => {
+                fillEditor();
+                modalOverlay.style.display = 'flex';
+            });
+
+            // 取消
+            cancelEditorBtn.addEventListener('click', () => {
+                modalOverlay.style.display = 'none';
+            });
+
+            // 保存
+            saveEditorBtn.addEventListener('click', () => {
+                const collected = collectEditorData();
+                if (collected.tasks.length > 0) tasks = collected.tasks;
+                if (collected.shop.length > 0) shopItems = collected.shop;
+                if (collected.spin.length > 0) spinPrizes = collected.spin;
+                // 如果某部分为空，保留原有（避免误删）
+                refreshAllUI();
+                saveAllToStorage();
+                modalOverlay.style.display = 'none';
+            });
+
+            // 添加任务行
+            addTaskBtn.addEventListener('click', () => {
+                addEditItemRow(editTasksContainer, 'task', Date.now(), '', 0);
+            });
+
+            // 添加商品行
+            addShopBtn.addEventListener('click', () => {
+                addEditItemRow(editShopContainer, 'shop', Date.now(), '', 0);
+            });
+
+            // 添加奖项行
+            addSpinBtn.addEventListener('click', () => {
+                addEditSpinRow(editSpinContainer, Date.now(), 0);
+            });
+
+            // 删除按钮委托 (由于动态添加，使用事件监听)
+            editTasksContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-row')) {
+                    e.target.closest('.edit-item').remove();
+                }
+            });
+            editShopContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-row')) {
+                    e.target.closest('.edit-item').remove();
+                }
+            });
+            editSpinContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-spin-row')) {
+                    e.target.closest('.edit-item').remove();
+                }
+            });
+
+            // 转盘按钮
+            freeSpinBtn.addEventListener('click', () => spinWheel(true));
+            paidSpinBtn.addEventListener('click', () => spinWheel(false));
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
