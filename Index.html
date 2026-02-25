@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>🏆 学习·生活 积分系统 (概率转盘)</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    body { background: #f5f7fa; margin: 0; padding: 12px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .scoreboard { background: linear-gradient(145deg, #2c3e50, #1e2b37); color: white; padding: 20px; border-radius: 32px; text-align: center; margin-bottom: 16px; }
+    .points { font-size: 4rem; font-weight: 700; line-height: 1; }
+    
+    .weight-card { background: #e8f0fe; border-radius: 28px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .weight-progress { flex: 2; min-width: 200px; }
+    .progress-bar { height: 16px; background: #d0ddeb; border-radius: 30px; overflow: hidden; margin: 5px 0; }
+    .progress-fill { height: 100%; background: #27ae60; width: 0%; border-radius: 30px; transition: width 0.3s; }
+    .weight-input { display: flex; gap: 8px; align-items: center; }
+    .weight-input input { width: 80px; padding: 8px; border-radius: 40px; border: 1px solid #ccc; text-align: center; }
+    
+    .card { background: white; border-radius: 28px; padding: 18px; margin-bottom: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    .card-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 15px; border-left: 6px solid #ffb347; padding-left: 16px; display: flex; align-items: center; gap: 10px; }
+    
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
+    .badge-item { background: #f8f9fc; border-radius: 20px; padding: 12px 6px; text-align: center; border: 1px solid #e9ecf0; }
+    .badge-icon { font-size: 2.2rem; }
+    .badge-name { font-size: 0.8rem; font-weight: 500; margin: 5px 0 2px; }
+    .badge-desc { font-size: 0.65rem; color: #7f8c8d; }
+    .badge.locked { opacity: 0.4; filter: grayscale(0.8); }
+    
+    .log-list { max-height: 200px; overflow-y: auto; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 8px; }
+    .log-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #f0f0f0; }
+    .log-time { color: #95a5a6; font-size: 0.7rem; width: 70px; }
+    .log-action { flex: 2; }
+    .log-points { font-weight: 600; width: 50px; text-align: right; }
+    .green { color: #27ae60; }
+    .red { color: #e74c3c; }
+    
+    .stats-row { display: flex; gap: 15px; flex-wrap: wrap; justify-content: space-around; text-align: center; }
+    .stat-item { background: #f0f4f9; padding: 10px; border-radius: 20px; flex: 1 1 100px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #2c3e50; }
+    .stat-label { font-size: 0.8rem; color: #7f8c8d; }
+    
+    .list-item { background: #f8f9fc; border-radius: 20px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e9ecf0; margin-bottom: 8px; }
+    .button { background: #2c3e50; border: none; color: white; padding: 10px 20px; border-radius: 40px; cursor: pointer; min-width: 80px; text-align: center; }
+    .button.primary { background: #e67e22; }
+    .button.secondary { background: #3498db; }
+    .edit-btn { background: #34495e; color: white; border: none; padding: 10px 18px; border-radius: 40px; font-size: 1.2rem; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 40px; padding: 24px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .edit-item { display: flex; gap: 8px; align-items: center; background: #f0f3f8; border-radius: 60px; padding: 8px 16px; margin-bottom: 10px; flex-wrap: wrap; }
+    .edit-item input { flex: 1 1 100px; padding: 10px; border-radius: 40px; border: 1px solid #ccd7e4; }
+    .edit-item input[type=number] { width: 80px; flex: 0 1 80px; }
+    .edit-item button { background: #e74c3c; color: white; border: none; border-radius: 40px; padding: 8px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <span style="font-size:1.8rem; font-weight:600;">🏆 人生银行</span>
+    <button class="edit-btn" id="openEditor">✎ 编辑</button>
+  </div>
+
+  <div class="scoreboard">
+    <h2 style="margin:0; font-weight:400;">💰 当前积分</h2>
+    <div class="points" id="pointsDisplay">100</div>
+  </div>
+
+  <div class="weight-card">
+    <div style="font-size:1.5rem;">⚖️</div>
+    <div class="weight-progress">
+      <div style="display:flex; justify-content:space-between;">
+        <span id="weightCurrent">--</span>
+        <span id="weightTarget">目标 --</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="weightProgressFill" style="width:0%"></div>
+      </div>
+      <div style="font-size:0.8rem; color:#4a6fa5;">距目标还剩 <span id="weightRemain">--</span></div>
+    </div>
+    <div class="weight-input">
+      <input type="number" id="weightInput" placeholder="今日体重" step="0.1">
+      <button class="button secondary" id="recordWeightBtn">记录</button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 2; min-width: 300px;">
+      <div class="card">
+        <div class="card-title">📋 重复任务</div>
+        <div id="taskList"></div>
+        <div style="color:#5d6d7e; padding-top:8px; font-size:0.9rem;">⚡ 点击【完成】获得积分，可反复完成</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏪 积分商城</div>
+        <div id="shopList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎲 幸运大转盘</div>
+        <div style="display:flex; gap:16px; justify-content:center; margin-bottom:16px">
+          <button class="button secondary" id="freeSpin">🆓 免费</button>
+          <button class="button primary" id="paidSpin">💰 付费20</button>
+        </div>
+        <div class="wheel-result" id="spinResult" style="background:#ecf0f1; border-radius:50px; padding:12px; text-align:center;">✨ 试试手气</div>
+        <div id="prizeDisplay" style="background:#fdebd0; padding:8px; border-radius:30px; text-align:center; margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <div style="flex: 1.5; min-width: 260px;">
+      <div class="card">
+        <div class="card-title">📊 统计</div>
+        <div class="stats-row">
+          <div class="stat-item"><span class="stat-value" id="statTotalTasks">0</span><div class="stat-label">总完成任务</div></div>
+          <div class="stat-item"><span class="stat-value" id="statTotalEarned">0</span><div class="stat-label">总赚积分</div></div>
+          <div class="stat-item"><span class="stat-value" id="statStreak">0</span><div class="stat-label">连续打卡</div></div>
+        </div>
+        <div style="margin-top:12px; font-size:0.9rem;">📈 近7日积分: <span id="weeklyTrend">--</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏅 成就徽章 <span style="font-size:0.8rem; font-weight:normal; margin-left:auto;" id="badgeCount">0/8</span></div>
+        <div class="badge-grid" id="badgeWall"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📜 活动流水</div>
+        <div class="log-list" id="logList">
+          <div style="color:#aaa; text-align:center;">暂无记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑模态框（含概率转盘设置） -->
+<div class="modal" id="editorModal">
+  <div class="modal-content">
+    <h3>⚙️ 编辑配置</h3>
+    <div style="border-bottom:1px solid #ddd; margin-bottom:20px; padding-bottom:10px;">
+      <h4>⚖️ 体重目标</h4>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="number" id="weightGoalInput" placeholder="目标体重(kg)" step="0.1" style="flex:1; padding:12px; border-radius:40px; border:1px solid #ccc;">
+        <input type="number" id="weightStartInput" placeholder="起始体重(kg)" step="0.1" style="flex:1; padding:12px; border-radius:40px; border:1px solid #ccc;">
+      </div>
+    </div>
+
+    <div class="edit-section">
+      <h4>📋 任务列表 (名称, 积分, 分类)</h4>
+      <div id="editTasksContainer"></div>
+      <button class="button" id="addTaskBtn" style="margin-top:10px;">➕ 添加任务</button>
+    </div>
+    <div class="edit-section">
+      <h4>🏪 商城物品 (名称, 积分)</h4>
+      <div id="editShopContainer"></div>
+      <button class="button" id="addShopBtn">➕ 添加商品</button>
+    </div>
+    <div class="edit-section">
+      <h4>🎲 转盘奖项 (名称, 积分值, 概率%)</h4>
+      <p style="font-size:0.8rem; color:#e67e22;">⚠️ 所有奖项概率之和必须等于100%</p>
+      <div id="editSpinContainer"></div>
+      <button class="button" id="addSpinBtn">➕ 添加奖项</button>
+    </div>
+    <div style="display:flex; gap:16px; margin-top:24px; justify-content:flex-end;">
+      <button class="button" id="cancelEdit">取消</button>
+      <button class="button primary" id="saveEdit">保存修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ---------- 默认数据 ----------
+  const DEFAULT_TASKS = [
+    { name: '📖 英语 25min', points: 10, category: 'english' },
+    { name: '🇪🇸 西语 25min', points: 10, category: 'spanish' },
+    { name: '🇮🇹 意语 25min', points: 10, category: 'italian' },
+    { name: '💻 编程 25min', points: 15, category: 'code' },
+    { name: '🧠 心理学 25min', points: 10, category: 'psych' },
+    { name: '🎬 外语电影', points: 20, category: 'movie' }
+  ];
+  const DEFAULT_SHOP = [
+    { name: '🧋 奶茶', pointsCost: 30 },
+    { name: '🎮 1小时游戏', pointsCost: 40 },
+    { name: '📖 小说', pointsCost: 15 },
+    { name: '🍿 综艺', pointsCost: 25 },
+    { name: '🍕 料理基金', pointsCost: 60 },
+    { name: '💤 免做卡', pointsCost: 50 }
+  ];
+  // 转盘奖项默认：名称、积分、概率
+  const DEFAULT_SPIN = [
+    { name: '+5 积分', points: 5, prob: 20 },
+    { name: '+10 积分', points: 10, prob: 20 },
+    { name: '+20 积分', points: 20, prob: 10 },
+    { name: '+50 积分', points: 50, prob: 5 },
+    { name: '谢谢参与', points: 0, prob: 30 },
+    { name: '幸运奖', points: 8, prob: 15 }
+  ];
+  const SPIN_COST = 20;
+
+  const BADGES = [
+    { id: 'first', name: '🌟 第一步', desc: '完成第一个任务', icon: '🌱', condition: (stats) => stats.totalTasks >= 1 },
+    { id: 'points500', name: '💰 积分500', desc: '累计获得500积分', icon: '🪙', condition: (stats) => stats.totalEarned >= 500 },
+    { id: 'points2000', name: '💎 积分2000', desc: '累计获得2000积分', icon: '💎', condition: (stats) => stats.totalEarned >= 2000 },
+    { id: 'streak7', name: '🔥 坚持7天', desc: '连续打卡7天', icon: '📅', condition: (stats) => stats.streak >= 7 },
+    { id: 'english3', name: '🇬🇧 英语新星', desc: '连续3天学英语', icon: '📘', condition: (stats) => stats.englishStreak >= 3 },
+    { id: 'english7', name: '🏆 英语大师', desc: '连续7天学英语', icon: '🇬🇧', condition: (stats) => stats.englishStreak >= 7 },
+    { id: 'allround', name: '🎯 全科战士', desc: '完成所有学科各一次', icon: '⚡', condition: (stats) => stats.categoriesCompleted.size >= 5 },
+    { id: 'shopaholic', name: '🛍️ 购物狂', desc: '兑换10次商品', icon: '🧾', condition: (stats) => stats.totalExchanges >= 10 }
+  ];
+
+  // ---------- 全局变量 ----------
+  let points = 100;
+  let lastFreeDate = '';
+  let tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  let shop = JSON.parse(JSON.stringify(DEFAULT_SHOP));
+  let spinPrizes = JSON.parse(JSON.stringify(DEFAULT_SPIN)); // 对象数组
+  
+  let activityLog = [];
+  let unlockedBadges = [];
+  let weightRecords = [];
+  let weightGoal = { target: 70, start: 80 };
+  
+  let lastTaskDate = '';
+  let streak = 0;
+  let lastEnglishDate = '';
+  let englishStreak = 0;
+  let totalTasksDone = 0;
+  let totalEarned = 0;
+  let totalExchanges = 0;
+  let categoriesDone = new Set();
+
+  // ---------- 加载/存储 ----------
+  function loadData() {
+    try {
+      points = parseInt(localStorage.getItem('points')) || 100;
+      lastFreeDate = localStorage.getItem('lastFreeDate') || '';
+      if (localStorage.getItem('tasks')) tasks = JSON.parse(localStorage.getItem('tasks'));
+      if (localStorage.getItem('shop')) shop = JSON.parse(localStorage.getItem('shop'));
+      
+      // 迁移旧版转盘数据：如果是数组且元素是数字，则转换为默认对象
+      let savedSpin = localStorage.getItem('spinPrizes');
+      if (savedSpin) {
+        let parsed = JSON.parse(savedSpin);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'number') {
+          // 旧版数字数组，转换为带概率的默认对象（均分概率）
+          let total = parsed.length;
+          spinPrizes = parsed.map((val, idx) => ({
+            name: val === 0 ? '谢谢参与' : `+${val}积分`,
+            points: val,
+            prob: Math.floor(100 / total)
+          }));
+          // 调整总和为100
+          let sum = spinPrizes.reduce((acc, p) => acc + p.prob, 0);
+          if (sum !== 100 && spinPrizes.length > 0) {
+            spinPrizes[0].prob += (100 - sum);
+          }
+        } else {
+          spinPrizes = parsed;
+        }
+      } else {
+        spinPrizes = JSON.parse(JSON.stringify(DEFAULT_SPIN));
+      }
+      
+      if (localStorage.getItem('activityLog')) activityLog = JSON.parse(localStorage.getItem('activityLog'));
+      if (localStorage.getItem('unlockedBadges')) unlockedBadges = JSON.parse(localStorage.getItem('unlockedBadges'));
+      if (localStorage.getItem('weightRecords')) weightRecords = JSON.parse(localStorage.getItem('weightRecords'));
+      if (localStorage.getItem('weightGoal')) weightGoal = JSON.parse(localStorage.getItem('weightGoal'));
+      
+      streak = parseInt(localStorage.getItem('streak')) || 0;
+      lastTaskDate = localStorage.getItem('lastTaskDate') || '';
+      englishStreak = parseInt(localStorage.getItem('englishStreak')) || 0;
+      lastEnglishDate = localStorage.getItem('lastEnglishDate') || '';
+      totalTasksDone = parseInt(localStorage.getItem('totalTasksDone')) || 0;
+      totalEarned = parseInt(localStorage.getItem('totalEarned')) || 0;
+      totalExchanges = parseInt(localStorage.getItem('totalExchanges')) || 0;
+      
+      let catArr = localStorage.getItem('categoriesDone');
+      if (catArr) categoriesDone = new Set(JSON.parse(catArr));
+    } catch (e) { /* 默认值 */ }
+  }
+
+  function saveAll() {
+    localStorage.setItem('points', points);
+    localStorage.setItem('lastFreeDate', lastFreeDate);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    localStorage.setItem('shop', JSON.stringify(shop));
+    localStorage.setItem('spinPrizes', JSON.stringify(spinPrizes));
+    localStorage.setItem('activityLog', JSON.stringify(activityLog));
+    localStorage.setItem('unlockedBadges', JSON.stringify(unlockedBadges));
+    localStorage.setItem('weightRecords', JSON.stringify(weightRecords));
+    localStorage.setItem('weightGoal', JSON.stringify(weightGoal));
+    localStorage.setItem('streak', streak);
+    localStorage.setItem('lastTaskDate', lastTaskDate);
+    localStorage.setItem('englishStreak', englishStreak);
+    localStorage.setItem('lastEnglishDate', lastEnglishDate);
+    localStorage.setItem('totalTasksDone', totalTasksDone);
+    localStorage.setItem('totalEarned', totalEarned);
+    localStorage.setItem('totalExchanges', totalExchanges);
+    localStorage.setItem('categoriesDone', JSON.stringify([...categoriesDone]));
+  }
+
+  // ---------- 日志 ----------
+  function log(action, pointsChange, type) {
+    const entry = {
+      time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }),
+      date: new Date().toISOString().split('T')[0],
+      action: action,
+      points: pointsChange,
+      type: type
+    };
+    activityLog.unshift(entry);
+    if (activityLog.length > 50) activityLog.pop();
+    renderLog();
+  }
+
+  // ---------- 成就检查 ----------
+  function checkBadges() {
+    const stats = {
+      totalTasks: totalTasksDone,
+      totalEarned: totalEarned,
+      streak: streak,
+      englishStreak: englishStreak,
+      categoriesCompleted: categoriesDone,
+      totalExchanges: totalExchanges
+    };
+    BADGES.forEach(badge => {
+      if (!unlockedBadges.includes(badge.id) && badge.condition(stats)) {
+        unlockedBadges.push(badge.id);
+        log(`🏅 解锁成就：${badge.name}`, 0, 'badge');
+      }
+    });
+    renderBadges();
+  }
+
+  // ---------- 打卡 ----------
+  function updateStreak(category) {
+    const today = new Date().toISOString().split('T')[0];
+    if (lastTaskDate === today) { /* 已打卡 */ } 
+    else if (lastTaskDate === getYesterday()) { streak += 1; } 
+    else { streak = 1; }
+    lastTaskDate = today;
+    
+    if (category === 'english') {
+      if (lastEnglishDate === today) { /* 已打卡 */ } 
+      else if (lastEnglishDate === getYesterday()) { englishStreak += 1; } 
+      else { englishStreak = 1; }
+      lastEnglishDate = today;
+    }
+    if (category) categoriesDone.add(category);
+  }
+
+  function getYesterday() {
+    const d = new Date();
+    d.setDate(d.getDate()-1);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ---------- 任务完成 ----------
+  function completeTask(task) {
+    points += task.points;
+    totalTasksDone += 1;
+    totalEarned += task.points;
+    updateStreak(task.category);
+    log(`✅ ${task.name}`, task.points, 'earn');
+    checkBadges();
+    renderAll();
+  }
+
+  // ---------- 兑换 ----------
+  function exchange(item) {
+    if (points >= item.pointsCost) {
+      points -= item.pointsCost;
+      totalExchanges += 1;
+      log(`🛒 ${item.name}`, -item.pointsCost, 'spend');
+      checkBadges();
+      renderAll();
+      alert(`兑换成功：${item.name}`);
+    } else {
+      alert('积分不足');
+    }
+  }
+
+  // ---------- 转盘抽奖（概率版）----------
+  function spinWheel(isFree) {
+    if (isFree) {
+      if (lastFreeDate === new Date().toISOString().split('T')[0]) {
+        alert('今日免费已用'); return;
+      }
+      lastFreeDate = new Date().toISOString().split('T')[0];
+    } else {
+      if (points < SPIN_COST) { alert('积分不足'); return; }
+      points -= SPIN_COST;
+    }
+    
+    if (!spinPrizes.length) return;
+    
+    // 计算总概率（应等于100，但以防万一）
+    const totalProb = spinPrizes.reduce((sum, p) => sum + (p.prob || 0), 0);
+    if (totalProb <= 0) return;
+    
+    let rand = Math.random() * totalProb;
+    let selected = spinPrizes[0];
+    for (let prize of spinPrizes) {
+      if (rand < prize.prob) {
+        selected = prize;
+        break;
+      }
+      rand -= prize.prob;
+    }
+    
+    points += selected.points;
+    log(`🎰 转盘：${selected.name}`, selected.points, selected.points>=0?'earn':'spend');
+    renderAll();
+    document.getElementById('spinResult').innerText = `🎉 抽中：${selected.name} ${selected.points!==0 ? (selected.points>0 ? '+' + selected.points : selected.points) : ''}`;
+  }
+
+  // ---------- 体重记录 ----------
+  function recordWeight() {
+    const input = document.getElementById('weightInput');
+    const w = parseFloat(input.value);
+    if (isNaN(w) || w <= 0) { alert('请输入有效体重'); return; }
+    const today = new Date().toISOString().split('T')[0];
+    const existing = weightRecords.findIndex(r => r.date === today);
+    if (existing >= 0) weightRecords[existing].weight = w;
+    else weightRecords.push({ date: today, weight: w });
+    weightRecords.sort((a,b)=>a.date.localeCompare(b.date));
+    log(`⚖️ 记录体重 ${w}kg`, 0, 'weight');
+    renderWeight();
+    saveAll();
+    input.value = '';
+  }
+
+  // ---------- 渲染 ----------
+  function renderAll() {
+    renderPoints();
+    renderTasks();
+    renderShop();
+    renderSpinButton();
+    renderPrizeDisplay();
+    renderLog();
+    renderBadges();
+    renderStats();
+    renderWeight();
+  }
+
+  function renderPoints() {
+    document.getElementById('pointsDisplay').innerText = points;
+  }
+
+  function renderTasks() {
+    const container = document.getElementById('taskList');
+    container.innerHTML = '';
+    tasks.forEach((t, idx) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `<span>${t.name}<br><small>+${t.points}分</small></span><button class="button" data-index="${idx}">✅ 完成</button>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.button').forEach(btn => {
+      btn.onclick = () => {
+        const idx = btn.dataset.index;
+        completeTask(tasks[idx]);
+        saveAll();
+      };
+    });
+  }
+
+  function renderShop() {
+    const container = document.getElementById('shopList');
+    container.innerHTML = '';
+    shop.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `<span>${item.name}<br><small>🔻${item.pointsCost}分</small></span><button class="button primary" data-index="${idx}">🎁 兑换</button>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.button').forEach(btn => {
+      btn.onclick = () => {
+        const idx = btn.dataset.index;
+        exchange(shop[idx]);
+        saveAll();
+      };
+    });
+  }
+
+  function renderSpinButton() {
+    const freeBtn = document.getElementById('freeSpin');
+    const today = new Date().toISOString().split('T')[0];
+    freeBtn.disabled = (lastFreeDate === today);
+    freeBtn.innerText = freeBtn.disabled ? '🆓 今日已用' : '🆓 免费';
+    document.getElementById('paidSpin').disabled = (points < SPIN_COST);
+  }
+
+  function renderPrizeDisplay() {
+    const list = spinPrizes.map(p => `${p.name} ${p.prob}%`).join(' · ');
+    document.getElementById('prizeDisplay').innerText = `奖项：${list}`;
+  }
+
+  function renderLog() {
+    const container = document.getElementById('logList');
+    if (!activityLog.length) {
+      container.innerHTML = '<div style="color:#aaa; text-align:center;">暂无记录</div>';
+      return;
+    }
+    container.innerHTML = activityLog.slice(0, 30).map(e => `
+      <div class="log-item">
+        <span class="log-time">${e.time}</span>
+        <span class="log-action">${e.action}</span>
+        <span class="log-points ${e.points>0?'green':e.points<0?'red':''}">${e.points>0?'+'+e.points:e.points}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderBadges() {
+    const wall = document.getElementById('badgeWall');
+    const stats = {
+      totalTasks: totalTasksDone,
+      totalEarned: totalEarned,
+      streak: streak,
+      englishStreak: englishStreak,
+      categoriesCompleted: categoriesDone,
+      totalExchanges: totalExchanges
+    };
+    wall.innerHTML = BADGES.map(b => {
+      const unlocked = unlockedBadges.includes(b.id);
+      const cond = b.condition(stats);
+      if (!unlocked && cond) {
+        unlockedBadges.push(b.id);
+        saveAll();
+      }
+      return `
+        <div class="badge-item ${unlocked ? '' : 'locked'}">
+          <div class="badge-icon">${b.icon}</div>
+          <div class="badge-name">${b.name}</div>
+          <div class="badge-desc">${b.desc}</div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('badgeCount').innerText = `${unlockedBadges.length}/${BADGES.length}`;
+  }
+
+  function renderStats() {
+    document.getElementById('statTotalTasks').innerText = totalTasksDone;
+    document.getElementById('statTotalEarned').innerText = totalEarned;
+    document.getElementById('statStreak').innerText = streak;
+    const last7Days = activityLog.filter(e => {
+      const daysAgo = (new Date() - new Date(e.date)) / (1000*3600*24);
+      return daysAgo <= 7 && e.points > 0;
+    }).reduce((acc, e) => acc + e.points, 0);
+    document.getElementById('weeklyTrend').innerText = last7Days + ' 积分';
+  }
+
+  function renderWeight() {
+    const current = weightRecords.length ? weightRecords[weightRecords.length-1].weight : weightGoal.start;
+    const target = weightGoal.target;
+    const start = weightGoal.start;
+    document.getElementById('weightCurrent').innerText = current.toFixed(1) + ' kg';
+    document.getElementById('weightTarget').innerText = target.toFixed(1) + ' kg';
+    const progress = ((start - current) / (start - target)) * 100;
+    const fillWidth = Math.min(100, Math.max(0, progress));
+    document.getElementById('weightProgressFill').style.width = fillWidth + '%';
+    const remain = (current - target).toFixed(1);
+    document.getElementById('weightRemain').innerText = (remain > 0 ? '+' : '') + remain + ' kg';
+  }
+
+  // ---------- 编辑功能 ----------
+  function fillEditor() {
+    // 任务
+    const et = document.getElementById('editTasksContainer');
+    et.innerHTML = '';
+    tasks.forEach((t, i) => {
+      et.innerHTML += `<div class="edit-item">
+        <input value="${t.name.replace(/"/g, '&quot;')}" placeholder="任务名" class="task-name">
+        <input value="${t.points}" type="number" class="task-points" min="0">
+        <input value="${t.category||''}" placeholder="分类" class="task-cat">
+        <button class="delete-task">删</button>
+      </div>`;
+    });
+    // 商城
+    const es = document.getElementById('editShopContainer');
+    es.innerHTML = '';
+    shop.forEach((s, i) => {
+      es.innerHTML += `<div class="edit-item">
+        <input value="${s.name.replace(/"/g, '&quot;')}" class="shop-name">
+        <input value="${s.pointsCost}" type="number" class="shop-cost" min="0">
+        <button class="delete-shop">删</button>
+      </div>`;
+    });
+    // 转盘
+    const esp = document.getElementById('editSpinContainer');
+    esp.innerHTML = '';
+    spinPrizes.forEach((p, i) => {
+      esp.innerHTML += `<div class="edit-item">
+        <input value="${p.name.replace(/"/g, '&quot;')}" placeholder="名称" class="spin-name">
+        <input value="${p.points}" type="number" class="spin-points" min="-100" step="1" placeholder="积分">
+        <input value="${p.prob}" type="number" class="spin-prob" min="0" max="100" step="1" placeholder="概率%">
+        <button class="delete-spin">删</button>
+      </div>`;
+    });
+    // 体重目标
+    document.getElementById('weightGoalInput').value = weightGoal.target;
+    document.getElementById('weightStartInput').value = weightGoal.start;
+    
+    // 绑定删除事件
+    document.querySelectorAll('.delete-task').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+    document.querySelectorAll('.delete-shop').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+    document.querySelectorAll('.delete-spin').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+  }
+
+  function saveEditor() {
+    // 解析任务
+    const newTasks = [];
+    document.querySelectorAll('#editTasksContainer .edit-item').forEach(div => {
+      const name = div.querySelector('.task-name')?.value.trim();
+      const points = parseInt(div.querySelector('.task-points')?.value);
+      const cat = div.querySelector('.task-cat')?.value.trim() || 'other';
+      if (name && !isNaN(points)) newTasks.push({ name, points, category: cat });
+    });
+    if (newTasks.length) tasks = newTasks;
+    
+    // 商城
+    const newShop = [];
+    document.querySelectorAll('#editShopContainer .edit-item').forEach(div => {
+      const name = div.querySelector('.shop-name')?.value.trim();
+      const cost = parseInt(div.querySelector('.shop-cost')?.value);
+      if (name && !isNaN(cost)) newShop.push({ name, pointsCost: cost });
+    });
+    if (newShop.length) shop = newShop;
+    
+    // 转盘
+    const newSpin = [];
+    let totalProb = 0;
+    document.querySelectorAll('#editSpinContainer .edit-item').forEach(div => {
+      const name = div.querySelector('.spin-name')?.value.trim();
+      const points = parseInt(div.querySelector('.spin-points')?.value);
+      const prob = parseInt(div.querySelector('.spin-prob')?.value);
+      if (name && !isNaN(points) && !isNaN(prob) && prob > 0) {
+        newSpin.push({ name, points, prob });
+        totalProb += prob;
+      }
+    });
+    if (newSpin.length > 0) {
+      if (totalProb !== 100) {
+        alert(`错误：所有奖项的概率之和必须等于100%！当前总和为${totalProb}%`);
+        return; // 阻止保存
+      }
+      spinPrizes = newSpin;
+    }
+    
+    // 体重目标
+    const t = parseFloat(document.getElementById('weightGoalInput').value);
+    const s = parseFloat(document.getElementById('weightStartInput').value);
+    if (!isNaN(t) && t>0) weightGoal.target = t;
+    if (!isNaN(s) && s>0) weightGoal.start = s;
+    
+    document.getElementById('editorModal').style.display = 'none';
+    renderAll();
+    saveAll();
+  }
+
+  // ---------- 初始化 ----------
+  loadData();
+  renderAll();
+
+  // 事件绑定
+  document.getElementById('openEditor').onclick = () => {
+    fillEditor();
+    document.getElementById('editorModal').style.display = 'flex';
+  };
+  document.getElementById('cancelEdit').onclick = () => document.getElementById('editorModal').style.display = 'none';
+  document.getElementById('saveEdit').onclick = saveEditor;
+
+  document.getElementById('freeSpin').onclick = () => { spinWheel(true); saveAll(); };
+  document.getElementById('paidSpin').onclick = () => { spinWheel(false); saveAll(); };
+
+  document.getElementById('recordWeightBtn').onclick = recordWeight;
+
+  // 添加按钮
+  document.getElementById('addTaskBtn').onclick = () => {
+    document.getElementById('editTasksContainer').innerHTML += '<div class="edit-item"><input placeholder="任务名" class="task-name"><input placeholder="积分" type="number" class="task-points"><input placeholder="分类" class="task-cat"><button class="delete-task">删</button></div>';
+    document.querySelectorAll('.delete-task').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+  };
+  document.getElementById('addShopBtn').onclick = () => {
+    document.getElementById('editShopContainer').innerHTML += '<div class="edit-item"><input placeholder="商品名" class="shop-name"><input placeholder="所需积分" type="number" class="shop-cost"><button class="delete-shop">删</button></div>';
+    document.querySelectorAll('.delete-shop').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+  };
+  document.getElementById('addSpinBtn').onclick = () => {
+    document.getElementById('editSpinContainer').innerHTML += '<div class="edit-item"><input placeholder="奖项名称" class="spin-name"><input placeholder="积分值" type="number" class="spin-points"><input placeholder="概率%" type="number" class="spin-prob" min="1" max="100"><button class="delete-spin">删</button></div>';
+    document.querySelectorAll('.delete-spin').forEach(btn => btn.onclick = e => e.target.closest('.edit-item').remove());
+  };
+})();
+</script>
+</body>
+</html>
