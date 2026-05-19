@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>目标游戏化·每日减肥挑战营</title>
+    <!-- Chart.js 轻量图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            color: #eef4ff;
+        }
+
+        /* 主容器 */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 头部积分栏+进度 */
+        .stats-header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .points-card {
+            background: #f5b04220;
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .points-card span {
+            color: #ffd966;
+            font-size: 1.8rem;
+        }
+
+        .progress-area {
+            flex: 2;
+            min-width: 200px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar-bg {
+            background: #2d3e4b;
+            border-radius: 20px;
+            height: 18px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #3bb08f, #6fcf97);
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+
+        .weight-info {
+            font-size: 0.8rem;
+            background: #0f1e28;
+            padding: 5px 12px;
+            border-radius: 24px;
+        }
+
+        /* 网格布局 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(20, 32, 44, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 1.5rem;
+            padding: 1.2rem;
+            border: 1px solid rgba(255,255,200,0.15);
+            transition: 0.2s;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+        }
+
+        .card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #ffb347;
+            padding-left: 12px;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        button {
+            background: #2e4a6a;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.8rem;
+        }
+
+        button.primary {
+            background: #f39c12;
+            color: #1e2a36;
+            font-weight: bold;
+        }
+
+        button.danger {
+            background: #a13e3e;
+        }
+
+        button.success {
+            background: #2e8b57;
+        }
+
+        button.small {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+        }
+
+        input, select {
+            background: #0f1e2c;
+            border: 1px solid #3e5a6c;
+            padding: 8px 12px;
+            border-radius: 28px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        li {
+            background: #1e2f3c;
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+        }
+
+        .wheel-canvas {
+            width: 100%;
+            max-width: 260px;
+            margin: 0 auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        .stat-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        canvas#statsChart {
+            max-height: 220px;
+            width: 100%;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: #f39c12;
+            color: #1e2a36;
+            border-radius: 50px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- 状态栏 -->
+    <div class="stats-header">
+        <div class="points-card">🎯 我的积分 <span id="balanceDisplay">0</span></div>
+        <div class="progress-area">
+            <div class="progress-label"><span>🏆 减肥进度</span><span id="progressPercent">0%</span></div>
+            <div class="progress-bar-bg"><div class="progress-fill" id="weightProgressFill"></div></div>
+        </div>
+        <div class="weight-info">⚖️ 最新体重: <span id="latestWeight">--</span> kg</div>
+        <button id="openSettingsBtn" class="primary">⚙️ 自定义设置</button>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- 左侧: 任务+体重记录 -->
+        <div class="card">
+            <h3>✅ 每日任务 (自定义积分)</h3>
+            <div class="btn-group"><button id="addTaskBtn" class="small">+ 新建任务</button></div>
+            <ul id="taskList"></ul>
+            <hr style="margin: 12px 0; border-color:#2e4a6a">
+            <h3>📝 记录今日体重</h3>
+            <div style="display:flex; gap:10px;"><input type="number" id="weightInput" step="0.1" placeholder="kg"><button id="saveWeightBtn" class="primary">记录</button></div>
+            <div class="flex-between" style="margin-top:10px;"><span>📊 目标: <span id="targetWeightSpan">--</span> kg</span><span>初始: <span id="initialWeightSpan">--</span> kg</span></div>
+        </div>
+
+        <!-- 中间: 转盘 + 成就 -->
+        <div class="card">
+            <h3>🎡 幸运大转盘 (赢积分)</h3>
+            <canvas id="wheelCanvas" width="240" height="240" class="wheel-canvas"></canvas>
+            <div class="btn-group" style="justify-content:center;">
+                <button id="spinFreeBtn" class="success">✨ 每日免费</button>
+                <button id="spinCostBtn" class="primary">🎲 花费积分抽奖</button>
+            </div>
+            <div id="wheelHint" style="font-size:12px; text-align:center;">消耗 <span id="wheelCost">10</span> 积分/次 | 每日免费1次</div>
+            <h3>🏅 自定义成就</h3>
+            <button id="addAchievementBtn" class="small">+ 添加成就</button>
+            <ul id="achievementList"></ul>
+        </div>
+
+        <!-- 右侧: 积分兑换 + 流水账 -->
+        <div class="card">
+            <h3>🎁 积分兑换奖励 (自定义)</h3>
+            <button id="addRewardBtn" class="small">+ 自定义奖励</button>
+            <ul id="rewardList"></ul>
+            <h3>📜 流水账本</h3>
+            <div class="log-list" id="logList"></div>
+        </div>
+    </div>
+
+    <!-- 统计图表区域 + 切换 -->
+    <div class="card">
+        <h3>📈 统计面板 (体重趋势)</h3>
+        <div class="stat-buttons">
+            <button id="statDayBtn" class="primary">日视图</button>
+            <button id="statWeekBtn">周视图</button>
+            <button id="statMonthBtn">月视图</button>
+        </div>
+        <canvas id="statsChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<!-- 模态框全局 (动态创建) -->
+<script>
+    // ---------- 存储 KEY ----------
+    const STORAGE = "GoalGameDataV2";
+
+    // ---------- 默认数据结构 ----------
+    let appData = {
+        balance: 100,           // 初始积分
+        totalTaskCompletions: 0,
+        initWeight: 70.0,
+        targetWeight: 65.0,
+        weightRecords: [],     // {date, weight}
+        tasks: [],            // { id, name, points, lastCompletedDate }
+        achievements: [],     // { id, name, conditionType, conditionValue, rewardPoints, unlocked }
+        transactionLog: [],   // { date, type, desc, delta }
+        wheel: {
+            costPoints: 10,
+            freeSpinsDate: "", // 上次免费日期 YYYY-MM-DD
+            segments: [
+                { name: "+5分", probability: 40, rewardPoints: 5 },
+                { name: "+10分", probability: 30, rewardPoints: 10 },
+                { name: "+20分", probability: 20, rewardPoints: 20 },
+                { name: "谢谢参与", probability: 10, rewardPoints: 0 }
+            ]
+        },
+        redeemRewards: [       // 兑换品
+            { id: "r1", name: "虚拟咖啡券", costPoints: 80 },
+            { id: "r2", name: "电子书券", costPoints: 150 },
+            { id: "r3", name: "健身课程优惠", costPoints: 200 }
+        ]
+    };
+
+    // 辅助函数
+    function getTodayStr() { return new Date().toISOString().slice(0,10); }
+    function saveData() { localStorage.setItem(STORAGE, JSON.stringify(appData)); }
+    function loadData() {
+        let raw = localStorage.getItem(STORAGE);
+        if(raw) {
+            let parsed = JSON.parse(raw);
+            // 合并旧结构兼容性
+            appData = { ...appData, ...parsed };
+            if(!appData.wheel.freeSpinsDate) appData.wheel.freeSpinsDate = "";
+            if(!appData.transactionLog) appData.transactionLog = [];
+            if(!appData.totalTaskCompletions) appData.totalTaskCompletions = 0;
+            if(!appData.achievements) appData.achievements = [];
+            if(!appData.redeemRewards) appData.redeemRewards = [];
+            if(!appData.weightRecords) appData.weightRecords = [];
+            if(!appData.tasks) appData.tasks = [];
+            // 默认成就确保展示
+            if(appData.achievements.length===0) {
+                appData.achievements.push({ id:"ach1", name:"减重先锋", conditionType:"weightLoss", conditionValue:2, rewardPoints:50, unlocked:false });
+                appData.achievements.push({ id:"ach2", name:"勤奋之星", conditionType:"taskCount", conditionValue:10, rewardPoints:100, unlocked:false });
+            }
+        } else {
+            // 默认任务
+            appData.tasks = [
+                { id:"t1", name:"运动30分钟", points:15, lastCompletedDate:"" },
+                { id:"t2", name:"喝水2L", points:8, lastCompletedDate:"" },
+                { id:"t3", name:"健康早餐", points:10, lastCompletedDate:"" }
+            ];
+            appData.weightRecords = [{ date:getTodayStr(), weight:70.0 }];
+            appData.transactionLog = [];
+            appData.totalTaskCompletions = 0;
+            initDefaultAchievements();
+            saveData();
+        }
+        // 确保今日免费重置检测
+        if(appData.wheel.freeSpinsDate !== getTodayStr()) {
+            appData.wheel.freeSpinsDate = ""; // 未使用
+        }
+        saveData();
+    }
+    function initDefaultAchievements() {
+        appData.achievements = [
+            { id:"ach1", name:"减重2kg", conditionType:"weightLoss", conditionValue:2, rewardPoints:50, unlocked:false },
+            { id:"ach2", name:"完成任务10次", conditionType:"taskCount", conditionValue:10, rewardPoints:100, unlocked:false }
+        ];
+    }
+
+    // 积分变动 & 记录流水
+    function addPoints(amount, desc) {
+        if(amount === 0) return;
+        appData.balance += amount;
+        appData.transactionLog.unshift({ date: new Date().toLocaleString(), type: amount>0?"收入":"支出", desc, delta: amount });
+        if(appData.transactionLog.length > 100) appData.transactionLog.pop();
+        saveData();
+        refreshUI();
+    }
+
+    // 成就检查 (任务总次数，减重量)
+    function checkAchievements() {
+        let currentWeight = getCurrentWeight();
+        let weightLoss = appData.initWeight - currentWeight;
+        let completedTasks = appData.totalTaskCompletions;
+        let anyUnlock = false;
+        for(let ach of appData.achievements) {
+            if(ach.unlocked) continue;
+            let conditionMet = false;
+            if(ach.conditionType === "weightLoss" && weightLoss >= ach.conditionValue) conditionMet = true;
+            if(ach.conditionType === "taskCount" && completedTasks >= ach.conditionValue) conditionMet = true;
+            if(conditionMet) {
+                ach.unlocked = true;
+                addPoints(ach.rewardPoints, `🏅 达成成就「${ach.name}」奖励 ${ach.rewardPoints} 积分`);
+                anyUnlock = true;
+            }
+        }
+        if(anyUnlock) refreshUI();
+    }
+
+    // 最新体重
+    function getCurrentWeight() {
+        if(!appData.weightRecords.length) return appData.initWeight;
+        let sorted = [...appData.weightRecords].sort((a,b)=>b.date.localeCompare(a.date));
+        return sorted[0].weight;
+    }
+
+    // 进度条刷新
+    function updateProgressBar() {
+        let current = getCurrentWeight();
+        let init = appData.initWeight;
+        let target = appData.targetWeight;
+        let totalDiff = init - target;
+        if(totalDiff <= 0) totalDiff = 0.001;
+        let curDiff = init - current;
+        let percent = Math.min(100, Math.max(0, (curDiff / totalDiff) * 100));
+        if(current <= target) percent = 100;
+        if(init <= target && current <= target) percent = 100;
+        document.getElementById("progressPercent").innerText = Math.floor(percent)+"%";
+        document.getElementById("weightProgressFill").style.width = percent+"%";
+        document.getElementById("latestWeight").innerText = current.toFixed(1);
+        document.getElementById("initialWeightSpan").innerText = appData.initWeight.toFixed(1);
+        document.getElementById("targetWeightSpan").innerText = appData.targetWeight.toFixed(1);
+    }
+
+    // 渲染任务列表
+    function renderTasks() {
+        let container = document.getElementById("taskList");
+        let today = getTodayStr();
+        container.innerHTML = "";
+        appData.tasks.forEach(task => {
+            let li = document.createElement("li");
+            let completedToday = (task.lastCompletedDate === today);
+            li.innerHTML = `<div><b>${task.name}</b> +${task.points}分</div>`;
+            let btn = document.createElement("button");
+            btn.innerText = completedToday ? "✓ 今日已完成" : "✔️ 完成";
+            btn.disabled = completedToday;
+            if(!completedToday) btn.classList.add("success");
+            btn.style.fontSize="0.7rem";
+            btn.onclick = () => completeTask(task.id);
+            li.appendChild(btn);
+            container.appendChild(li);
+        });
+    }
+
+    function completeTask(taskId) {
+        let task = appData.tasks.find(t => t.id === taskId);
+        if(!task) return;
+        let today = getTodayStr();
+        if(task.lastCompletedDate === today) { alert("今日已完成该任务!"); return; }
+        task.lastCompletedDate = today;
+        appData.totalTaskCompletions++;
+        addPoints(task.points, `✅ 完成任务「${task.name}」 +${task.points}`);
+        checkAchievements();
+        renderTasks();
+        refreshUI();
+    }
+
+    // 成就渲染
+    function renderAchievements() {
+        let container = document.getElementById("achievementList");
+        container.innerHTML = "";
+        let currentWeight = getCurrentWeight();
+        let weightLoss = (appData.initWeight - currentWeight).toFixed(1);
+        let taskCount = appData.totalTaskCompletions;
+        appData.achievements.forEach(ach => {
+            let li = document.createElement("li");
+            let condText = ach.conditionType === "weightLoss" ? `减重≥${ach.conditionValue}kg (当前${weightLoss}kg)` : `完成任务≥${ach.conditionValue}次 (${taskCount}次)`;
+            li.innerHTML = `<div><b>${ach.name}</b><br><span style="font-size:10px;">${condText}</span></div>
+                            <div>🏅 ${ach.unlocked ? "已解锁 ✓" : "未解锁"}<br>🎁 +${ach.rewardPoints}</div>`;
+            container.appendChild(li);
+        });
+    }
+
+    // 兑换奖励渲染
+    function renderRewards() {
+        let container = document.getElementById("rewardList");
+        container.innerHTML = "";
+        appData.redeemRewards.forEach(reward => {
+            let li = document.createElement("li");
+            li.innerHTML = `<span>${reward.name}  🪙${reward.costPoints}</span>`;
+            let btn = document.createElement("button");
+            btn.innerText = "兑换";
+            btn.classList.add("primary");
+            btn.onclick = () => redeemReward(reward.id);
+            li.appendChild(btn);
+            container.appendChild(li);
+        });
+    }
+    function redeemReward(rewardId) {
+        let reward = appData.redeemRewards.find(r => r.id === rewardId);
+        if(!reward) return;
+        if(appData.balance >= reward.costPoints) {
+            addPoints(-reward.costPoints, `🎁 兑换「${reward.name}」 -${reward.costPoints}`);
+            alert(`兑换成功! 获得 ${reward.name}`);
+        } else alert("积分不足!");
+        refreshUI();
+    }
+
+    // 流水账
+    function renderLogs() {
+        let container = document.getElementById("logList");
+        container.innerHTML = "";
+        appData.transactionLog.slice(0, 30).forEach(log => {
+            let div = document.createElement("div");
+            div.style.borderBottom="1px solid #2c4a5e";
+            div.style.padding="5px 0";
+            div.innerHTML = `<span>${log.date}</span> <span>${log.desc}</span> <span style="color:${log.delta>0?'#90EE90':'#ffaa66'}">${log.delta>0?'+':''}${log.delta}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    // 体重记录 & 重绘进度+成就
+    function recordWeight(weight) {
+        let today = getTodayStr();
+        let existingIndex = appData.weightRecords.findIndex(w => w.date === today);
+        if(existingIndex !== -1) appData.weightRecords[existingIndex].weight = weight;
+        else appData.weightRecords.push({ date: today, weight });
+        appData.weightRecords.sort((a,b)=>b.date.localeCompare(a.date));
+        saveData();
+        updateProgressBar();
+        checkAchievements();   // 体重变化检测减重成就
+        refreshUI();
+        renderStatsChart(currentStatView); // 刷新图表
+    }
+
+    // 转盘逻辑
+    let wheelCtx, wheelImage;
+    function drawWheel() {
+        let canvas = document.getElementById("wheelCanvas");
+        if(!canvas) return;
+        let segments = appData.wheel.segments;
+        let totalProb = segments.reduce((s,seg)=>s+seg.probability,0);
+        let angles = [];
+        let startAngle = 0;
+        for(let seg of segments) {
+            let angle = (seg.probability / totalProb) * Math.PI * 2;
+            angles.push({start: startAngle, end: startAngle+angle, name: seg.name, reward: seg.rewardPoints});
+            startAngle += angle;
+        }
+        let ctx = canvas.getContext("2d");
+        let w = canvas.width, h = canvas.height, center = w/2, radius = w/2 - 5;
+        ctx.clearRect(0,0,w,h);
+        let colors = ["#f39c12","#e67e22","#f1c40f","#2ecc71","#3498db","#9b59b6"];
+        for(let i=0;i<angles.length;i++) {
+            let a = angles[i];
+            ctx.beginPath();
+            ctx.fillStyle = colors[i%colors.length];
+            ctx.moveTo(center,center);
+            ctx.arc(center,center,radius,a.start,a.end);
+            ctx.fill();
+            ctx.save();
+            ctx.translate(center,center);
+            ctx.rotate(a.start + (a.end-a.start)/2);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 12px 'Segoe UI'";
+            ctx.shadowBlur=0;
+            ctx.fillText(a.name.slice(0,6), radius/1.8, 5);
+            ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.fillStyle = "#2c3e50";
+        ctx.arc(center,center,18,0,2*Math.PI);
+        ctx.fill();
+        ctx.fillStyle="white";
+        ctx.font="bold 16px sans-serif";
+        ctx.fillText("🎡",center-8,center+6);
+    }
+
+    function spinWheel(isFree) {
+        let today = getTodayStr();
+        if(isFree) {
+            if(appData.wheel.freeSpinsDate === today) { alert("今日免费机会已用完!"); return false; }
+        } else {
+            if(appData.balance < appData.wheel.costPoints) { alert(`积分不足,需要${appData.wheel.costPoints}积分`); return false; }
+            addPoints(-appData.wheel.costPoints, `🎡 花费${appData.wheel.costPoints}积分转动转盘`);
+        }
+        // 抽奖
+        let segments = appData.wheel.segments;
+        let totalWeight = segments.reduce((s,seg)=>s+seg.probability,0);
+        let rand = Math.random() * totalWeight;
+        let accum = 0;
+        let selected = segments[0];
+        for(let seg of segments) {
+            accum += seg.probability;
+            if(rand <= accum) { selected = seg; break; }
+        }
+        let reward = selected.rewardPoints;
+        let msg = `${selected.name} 获得 ${reward} 积分!`;
+        addPoints(reward, `🎰 转盘结果: ${msg}`);
+        if(isFree) {
+            appData.wheel.freeSpinsDate = today;
+            saveData();
+        }
+        alert(`转盘结果: ${selected.name}\n${reward>0?`+${reward}积分`:"下次好运"}`);
+        refreshUI();
+        return true;
+    }
+
+    // ---------- 统计图表 (天/周/月) ----------
+    let statsChart = null;
+    let currentStatView = "day";
+    function renderStatsChart(view) {
+        if(statsChart) statsChart.destroy();
+        let ctx = document.getElementById("statsChart").getContext("2d");
+        let records = [...appData.weightRecords].sort((a,b)=>a.date.localeCompare(b.date));
+        if(records.length === 0) return;
+        let labels = [], data = [];
+        if(view === "day") {
+            labels = records.map(r=>r.date.slice(5));
+            data = records.map(r=>r.weight);
+        } else if(view === "week") {
+            let weekly = {};
+            records.forEach(r=>{
+                let weekKey = getWeekNumber(r.date);
+                if(!weekly[weekKey]) weekly[weekKey] = { sum:0, count:0, label:weekKey };
+                weekly[weekKey].sum += r.weight;
+                weekly[weekKey].count++;
+            });
+            labels = Object.keys(weekly).sort();
+            data = labels.map(k=> weekly[k].sum/weekly[k].count);
+        } else if(view === "month") {
+            let monthly = {};
+            records.forEach(r=>{
+                let mon = r.date.slice(0,7);
+                if(!monthly[mon]) monthly[mon] = { sum:0, count:0 };
+                monthly[mon].sum += r.weight;
+                monthly[mon].count++;
+            });
+            labels = Object.keys(monthly).sort();
+            data = labels.map(m=> monthly[m].sum/monthly[m].count);
+        }
+        statsChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: '体重 (kg)', data, borderColor: '#f39c12', backgroundColor: '#f39c2020', tension: 0.2, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    }
+    function getWeekNumber(dateStr) {
+        let d = new Date(dateStr);
+        d.setHours(0,0,0,0);
+        let yearStart = new Date(d.getFullYear(),0,1);
+        let week = Math.ceil(((d - yearStart) / 86400000 + yearStart.getDay())/7);
+        return `${d.getFullYear()}-W${week}`;
+    }
+
+    // 刷新全部UI
+    function refreshUI() {
+        document.getElementById("balanceDisplay").innerText = appData.balance;
+        updateProgressBar();
+        renderTasks();
+        renderAchievements();
+        renderRewards();
+        renderLogs();
+        drawWheel();
+        document.getElementById("wheelCost").innerText = appData.wheel.costPoints;
+        renderStatsChart(currentStatView);
+    }
+
+    // 自定义设置模态框 (全部可编辑)
+    function openSettingsModal() {
+        let html = `
+        <div id="customModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;display:flex;align-items:center;justify-content:center;">
+            <div style="background:#1e2e3b;width:90%;max-width:600px;border-radius:32px;padding:20px;max-height:80vh;overflow:auto;">
+                <h2>✨ 自定义中心</h2>
+                <h3>🎯 减肥目标</h3>
+                <div>初始体重: <input id="setInitWeight" type="number" step="0.1" value="${appData.initWeight}"></div>
+                <div>目标体重: <input id="setTargetWeight" type="number" step="0.1" value="${appData.targetWeight}"></div>
+                <h3>📋 任务管理</h3>
+                <ul id="taskEditList"></ul><button id="newTaskBtnModal">+ 新增任务</button>
+                <h3>🏅 成就管理</h3>
+                <ul id="achEditList"></ul><button id="newAchBtnModal">+ 新增成就</button>
+                <h3>🎡 转盘配置</h3>
+                <div>单次消耗积分: <input id="wheelCostSet" type="number" value="${appData.wheel.costPoints}"></div>
+                <div id="segmentsList"></div><button id="addSegmentBtn">+ 添加奖品</button>
+                <h3>🎁 兑换奖励</h3>
+                <ul id="rewardEditList"></ul><button id="newRewardBtnModal">+ 新增兑换</button>
+                <div style="margin-top:20px;"><button id="closeModalBtn" class="primary">保存并关闭</button></div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML("beforeend", html);
+        // 动态渲染编辑列表...
+        function refreshModalLists() {
+            let taskContainer = document.getElementById("taskEditList");
+            taskContainer.innerHTML = "";
+            appData.tasks.forEach((t,idx)=>{
+                let li = document.createElement("li");
+                li.innerHTML = `<input value="${t.name}" id="tname${idx}" placeholder="任务名"> +<input value="${t.points}" type="number" id="tpoints${idx}" style="width:60px;"> <button class="danger delTaskBtn" data-id="${t.id}">删除</button>`;
+                taskContainer.appendChild(li);
+            });
+            document.querySelectorAll(".delTaskBtn").forEach(btn=>{
+                btn.onclick = (e)=>{
+                    let id = btn.getAttribute("data-id");
+                    appData.tasks = appData.tasks.filter(t=>t.id !== id);
+                    refreshModalLists(); saveData();
+                };
+            });
+            // 成就
+            let achContainer = document.getElementById("achEditList");
+            achContainer.innerHTML = "";
+            appData.achievements.forEach((ach,idx)=>{
+                let li = document.createElement("li");
+                li.innerHTML = `<input value="${ach.name}" id="aname${idx}"> 类型<select id="atype${idx}"><option ${ach.conditionType==="weightLoss"?"selected":""}>weightLoss</option><option ${ach.conditionType==="taskCount"?"selected":""}>taskCount</option></select> 数值<input value="${ach.conditionValue}" id="aval${idx}" type="number"> 奖励积分<input value="${ach.rewardPoints}" id="apoints${idx}" type="number"><button class="danger delAchBtn" data-id="${ach.id}">删</button>`;
+                achContainer.appendChild(li);
+            });
+            document.querySelectorAll(".delAchBtn").forEach(btn=>{
+                btn.onclick = (e)=>{
+                    let id = btn.getAttribute("data-id");
+                    appData.achievements = appData.achievements.filter(a=>a.id !== id);
+                    refreshModalLists(); saveData();
+                };
+            });
+            // 兑换编辑
+            let rewContainer = document.getElementById("rewardEditList");
+            rewContainer.innerHTML = "";
+            appData.redeemRewards.forEach((r,idx)=>{
+                let li = document.createElement("li");
+                li.innerHTML = `<input value="${r.name}" id="rname${idx}"> 积分<input value="${r.costPoints}" type="number" id="rcost${idx}"><button class="danger delRewBtn" data-id="${r.id}">删除</button>`;
+                rewContainer.appendChild(li);
+            });
+            document.querySelectorAll(".delRewBtn").forEach(btn=>{
+                btn.onclick = (e)=>{
+                    let id = btn.getAttribute("data-id");
+                    appData.redeemRewards = appData.redeemRewards.filter(r=>r.id !== id);
+                    refreshModalLists(); saveData();
+                };
+            });
+            // 转盘奖品
+            let segDiv = document.getElementById("segmentsList");
+            segDiv.innerHTML = "";
+            appData.wheel.segments.forEach((seg,idx)=>{
+                let div = document.createElement("div");
+                div.style.marginTop="8px";
+                div.innerHTML = `名称<input value="${seg.name}" id="segName${idx}"> 权重<input value="${seg.probability}" type="number" id="segProb${idx}"> 奖励积分<input value="${seg.rewardPoints}" type="number" id="segRew${idx}"><button class="danger delSegBtn" data-idx="${idx}">移除</button>`;
+                segDiv.appendChild(div);
+            });
+            document.querySelectorAll(".delSegBtn").forEach(btn=>{
+                btn.onclick = (e)=>{
+                    let idx = btn.getAttribute("data-idx");
+                    appData.wheel.segments.splice(idx,1);
+                    refreshModalLists(); saveData();
+                };
+            });
+        }
+        refreshModalLists();
+        document.getElementById("newTaskBtnModal").onclick = ()=>{
+            let newId = Date.now()+"";
+            appData.tasks.push({ id:newId, name:"新任务", points:10, lastCompletedDate:"" });
+            refreshModalLists(); saveData();
+        };
+        document.getElementById("newAchBtnModal").onclick = ()=>{
+            appData.achievements.push({ id:"ach"+Date.now(), name:"新成就", conditionType:"taskCount", conditionValue:5, rewardPoints:30, unlocked:false });
+            refreshModalLists(); saveData();
+        };
+        document.getElementById("newRewardBtnModal").onclick = ()=>{
+            appData.redeemRewards.push({ id:"r"+Date.now(), name:"新奖品", costPoints:100 });
+            refreshModalLists(); saveData();
+        };
+        document.getElementById("addSegmentBtn").onclick = ()=>{
+            appData.wheel.segments.push({ name:"奖品", probability:10, rewardPoints:10 });
+            refreshModalLists(); saveData();
+        };
+        document.getElementById("closeModalBtn").onclick = ()=>{
+            // 保存各项编辑
+            let newInit = parseFloat(document.getElementById("setInitWeight").value);
+            let newTarget = parseFloat(document.getElementById("setTargetWeight").value);
+            if(!isNaN(newInit)) appData.initWeight = newInit;
+            if(!isNaN(newTarget)) appData.targetWeight = newTarget;
+            // 保存任务
+            for(let i=0;i<appData.tasks.length;i++) {
+                let nameInp = document.getElementById(`tname${i}`);
+                let pointsInp = document.getElementById(`tpoints${i}`);
+                if(nameInp) appData.tasks[i].name = nameInp.value;
+                if(pointsInp) appData.tasks[i].points = parseInt(pointsInp.value)||0;
+            }
+            for(let i=0;i<appData.achievements.length;i++) {
+                let nameInp = document.getElementById(`aname${i}`);
+                let typeSel = document.getElementById(`atype${i}`);
+                let valInp = document.getElementById(`aval${i}`);
+                let ptsInp = document.getElementById(`apoints${i}`);
+                if(nameInp) appData.achievements[i].name = nameInp.value;
+                if(typeSel) appData.achievements[i].conditionType = typeSel.value;
+                if(valInp) appData.achievements[i].conditionValue = parseFloat(valInp.value);
+                if(ptsInp) appData.achievements[i].rewardPoints = parseInt(ptsInp.value);
+            }
+            for(let i=0;i<appData.redeemRewards.length;i++) {
+                let nameInp = document.getElementById(`rname${i}`);
+                let costInp = document.getElementById(`rcost${i}`);
+                if(nameInp) appData.redeemRewards[i].name = nameInp.value;
+                if(costInp) appData.redeemRewards[i].costPoints = parseInt(costInp.value);
+            }
+            let wheelCostVal = parseInt(document.getElementById("wheelCostSet").value);
+            if(!isNaN(wheelCostVal)) appData.wheel.costPoints = wheelCostVal;
+            for(let i=0;i<appData.wheel.segments.length;i++) {
+                let nameI = document.getElementById(`segName${i}`);
+                let probI = document.getElementById(`segProb${i}`);
+                let rewI = document.getElementById(`segRew${i}`);
+                if(nameI) appData.wheel.segments[i].name = nameI.value;
+                if(probI) appData.wheel.segments[i].probability = parseFloat(probI.value);
+                if(rewI) appData.wheel.segments[i].rewardPoints = parseInt(rewI.value);
+            }
+            saveData();
+            refreshUI();
+            document.getElementById("customModal").remove();
+        };
+    }
+
+    // 事件绑定
+    function bindEvents() {
+        document.getElementById("saveWeightBtn").onclick = ()=>{
+            let w = parseFloat(document.getElementById("weightInput").value);
+            if(isNaN(w)) alert("输入有效体重");
+            else recordWeight(w);
+            document.getElementById("weightInput").value = "";
+        };
+        document.getElementById("addTaskBtn").onclick = ()=>{
+            let newName = prompt("任务名称","每日冥想");
+            if(newName){
+                appData.tasks.push({ id:Date.now()+"", name:newName, points:10, lastCompletedDate:"" });
+                saveData(); refreshUI();
+            }
+        };
+        document.getElementById("addAchievementBtn").onclick = ()=>{
+            let name = prompt("成就名称","极限挑战");
+            let type = confirm("类型: 确定=减重(kg), 取消=任务次数")?"weightLoss":"taskCount";
+            let val = parseFloat(prompt("目标值","5"));
+            let pts = parseInt(prompt("奖励积分","100"));
+            if(name && val) appData.achievements.push({ id:"ach"+Date.now(), name, conditionType:type, conditionValue:val, rewardPoints:pts||50, unlocked:false });
+            saveData(); refreshUI();
+        };
+        document.getElementById("addRewardBtn").onclick = ()=>{
+            let name = prompt("兑换奖励名称","奶茶兑换券");
+            let cost = parseInt(prompt("所需积分","120"));
+            if(name && cost) appData.redeemRewards.push({ id:"r"+Date.now(), name, costPoints:cost });
+            saveData(); refreshUI();
+        };
+        document.getElementById("spinFreeBtn").onclick = ()=> spinWheel(true);
+        document.getElementById("spinCostBtn").onclick = ()=> spinWheel(false);
+        document.getElementById("openSettingsBtn").onclick = openSettingsModal;
+        document.getElementById("statDayBtn").onclick = ()=>{ currentStatView="day"; renderStatsChart("day"); };
+        document.getElementById("statWeekBtn").onclick = ()=>{ currentStatView="week"; renderStatsChart("week"); };
+        document.getElementById("statMonthBtn").onclick = ()=>{ currentStatView="month"; renderStatsChart("month"); };
+    }
+    function init() {
+        loadData();
+        bindEvents();
+        refreshUI();
+    }
+    init();
+</script>
+</body>
+</html>
