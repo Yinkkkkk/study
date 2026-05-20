@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>学习系统</title>
+    <title>🎓学习系统</title>
     <style>
         * {
             box-sizing: border-box;
@@ -440,42 +440,30 @@
     // 默认初始数据
     const defaultData = {
         userPoints: 120,
-        initialWeight: 68,
-        targetWeight: 45,
-        currentWeight: 64,
+        initialWeight: 75,
+        targetWeight: 65,
+        currentWeight: 72,
         weightRecords: [],
         tasks: [
-            { id: "t1", name: "阅读 45min", points: 30 },
-            { id: "t2", name: "英语 45min", points: 40 },
-            { id: "t3", name: "备课", points: 25 },
-            { id: "t4", name: "上课 45min", points: 50 },
-            { id: "t5", name: "编程 45min", points: 35 },
-            { id: "t6", name: "出门", points: 100 }
-            { id: "t7", name: "作业 45min", points: 35 },
-            { id: "t8", name: "复习 20min", points: 15 }
+            { id: "t1", name: "晨间运动", points: 20 },
+            { id: "t2", name: "喝水2L", points: 10 },
+            { id: "t3", name: "健康早餐", points: 15 }
         ],
         achievements: [
-            { id: "a1", name: "学霸", description: "累计积分达到1000", conditionType: "totalPoints", conditionValue: 1000, rewardPoints: 150, unlocked: false },
-            { id: "a2", name: "自律达人", description: "完成50次任务", conditionType: "totalTasks", conditionValue: 50, rewardPoints: 160, unlocked: false },
-            { id: "a3", name: "减重先锋", description: "体重减少5kg", conditionType: "weightLoss", conditionValue: 5, rewardPoints: 120, unlocked: false },
-            { id: "a4", name: "好学生", description: "累计积分达到500", conditionType: "totalPoints", conditionValue: 500, rewardPoints: 80, unlocked: false },
-            { id: "a5", name: "自律博主", description: "完成100次任务", conditionType: "totalTasks", conditionValue: 100, rewardPoints: 300, unlocked: false },
-            { id: "a6", name: "减重高手", description: "体重减少10kg", conditionType: "weightLoss", conditionValue: 10, rewardPoints: 200, unlocked: false },
-            { id: "a7", name: "健身新星", description: "累计积分达到100", conditionType: "totalPoints", conditionValue: 100, rewardPoints: 50, unlocked: false },
-            { id: "a8", name: "自律先锋", description: "完成50次任务", conditionType: "totalTasks", conditionValue: 50, rewardPoints: 160, unlocked: false },
+            { id: "a1", name: "健身新星", description: "累计积分达到100", conditionType: "totalPoints", conditionValue: 100, rewardPoints: 50, unlocked: false },
+            { id: "a2", name: "自律达人", description: "完成30次任务", conditionType: "totalTasks", conditionValue: 30, rewardPoints: 80, unlocked: false },
+            { id: "a3", name: "减重先锋", description: "体重减少3kg", conditionType: "weightLoss", conditionValue: 3, rewardPoints: 70, unlocked: false }
         ],
         spinItems: [
-            { id: "s1", name: "小确幸", pointsReward: 20, probabilityWeight: 30 },
-            { id: "s2", name: "大吉大利", pointsReward: 50, probabilityWeight: 25 },
-            { id: "s3", name: "欧皇时刻", pointsReward: 100, probabilityWeight: 10 },
-            { id: "s4", name: "谢谢参与", pointsReward: 0, probabilityWeight: 35 }
+            { id: "s1", name: "小确幸", pointsReward: 10, probabilityWeight: 40 },
+            { id: "s2", name: "大吉大利", pointsReward: 30, probabilityWeight: 25 },
+            { id: "s3", name: "欧皇时刻", pointsReward: 80, probabilityWeight: 10 },
+            { id: "s4", name: "谢谢参与", pointsReward: 0, probabilityWeight: 25 }
         ],
         spinCost: 15,
         exchangeRewards: [
-            { id: "e1", name: "游戏 1h", requiredPoints: 50 },
-            { id: "e2", name: "小说 1h", requiredPoints: 75 }，
-            { id: "e3", name: "小红书 1h", requiredPoints: 100 }
-            { id: "e4", name: "发呆 30min", requiredPoints: 20 }
+            { id: "e1", name: "奶茶免罪券", requiredPoints: 60 },
+            { id: "e2", name: "电影票抵用", requiredPoints: 150 }
         ],
         ledger: [],
         taskCompletions: [], // {taskId, date}
@@ -493,9 +481,9 @@
             activeTab: 'home',
             tabs: [{key:'home',label:'🏠 主页'},{key:'tasks',label:'📋 任务'},{key:'achievements',label:'🏅 成就'},{key:'stats',label:'📈 流水/统计'},{key:'wheel',label:'🎡 转盘'},{key:'shop',label:'🎁 兑换'},{key:'settings',label:'⚙️ 设置'}],
             userPoints: 0,
-            initialWeight: 68,
-            targetWeight: 45,
-            currentWeight: 64,
+            initialWeight: 70,
+            targetWeight: 60,
+            currentWeight: 70,
             weightRecords: [],
             tasks: [],
             achievements: [],
