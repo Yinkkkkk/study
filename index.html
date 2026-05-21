@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🎓学习系统</title>
+    <title>💰积分系统</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
         }
         body {
-            background: #fef9e8;
+            background: #fef7ec;
             margin: 0;
             padding: 20px;
             color: #4a3b2c;
         }
-        /* 主容器淡色柔光 */
         .app-container {
             max-width: 1300px;
             margin: 0 auto;
@@ -26,23 +25,32 @@
             padding: 20px 24px 32px;
             transition: all 0.2s;
         }
-        /* 头部积分栏 */
         .header-stats {
             display: flex;
             justify-content: space-between;
-            align-items: baseline;
+            align-items: center;
             flex-wrap: wrap;
             background: #fff3e0;
-            padding: 16px 20px;
+            padding: 12px 20px;
             border-radius: 48px;
             margin-bottom: 28px;
+            gap: 12px;
+        }
+        .logo-area {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #c67a3a;
+            background: #ffefdb;
+            padding: 5px 20px;
+            border-radius: 50px;
+            letter-spacing: 1px;
         }
         .points-box {
             background: #ffecd6;
-            padding: 8px 22px;
+            padding: 6px 20px;
             border-radius: 40px;
             font-weight: bold;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             color: #c26e2c;
         }
         .points-label {
@@ -51,8 +59,8 @@
             margin-right: 8px;
         }
         .progress-section {
-            flex: 1;
-            margin: 0 20px;
+            flex: 2;
+            min-width: 180px;
         }
         .weight-progress {
             background: #e7dcc8;
@@ -68,11 +76,10 @@
             transition: width 0.3s ease;
         }
         .weight-text {
-            font-size: 0.85rem;
-            margin-top: 8px;
+            font-size: 0.8rem;
+            margin-top: 6px;
             color: #5d6b53;
         }
-        /* tabs 导航 */
         .nav-tabs {
             display: flex;
             flex-wrap: wrap;
@@ -108,7 +115,6 @@
             from { opacity: 0; transform: translateY(6px);}
             to { opacity: 1; transform: translateY(0);}
         }
-        /* 卡片通用 */
         .card {
             background: #ffffffea;
             border-radius: 32px;
@@ -147,7 +153,7 @@
         }
         .grid-2 {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+            grid-template-columns: repeat(auto-fill, minmax(270px,1fr));
             gap: 16px;
         }
         .task-item, .achievement-item, .reward-item {
@@ -158,6 +164,7 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            gap: 8px;
         }
         .badge {
             background: #e3d5c0;
@@ -190,12 +197,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .probability-item {
             display: flex;
             gap: 12px;
             align-items: center;
             margin-bottom: 8px;
+            flex-wrap: wrap;
         }
         hr {
             border-color: #f3e2cf;
@@ -219,7 +229,7 @@
         }
         @media (max-width: 700px) {
             .app-container { padding: 16px; }
-            .header-stats { flex-direction: column; gap: 12px; }
+            .header-stats { flex-direction: column; align-items: stretch; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
@@ -227,8 +237,9 @@
 <body>
 <div id="app">
     <div class="app-container">
-        <!-- 头部积分+减肥进度条 -->
+        <!-- 头部积分+体重进度+logo -->
         <div class="header-stats">
+            <div class="logo-area">💰 积分系统</div>
             <div class="points-box">
                 <span class="points-label">⭐ 我的积分</span>
                 <span style="font-weight:800;">{{ userPoints }}</span>
@@ -243,7 +254,7 @@
                     初始: {{ initialWeight }} kg
                 </div>
             </div>
-            <button @click="openWeightRecord" style="background:#e1cfb3;">✎ 记录体重</button>
+            <button @click="openWeightRecord" style="background:#e1cfb3;">⚖️ 记录体重</button>
         </div>
 
         <!-- 导航Tabs -->
@@ -251,26 +262,25 @@
             <button v-for="tab in tabs" :key="tab.key" class="tab-btn" :class="{active: activeTab===tab.key}" @click="activeTab=tab.key">{{ tab.label }}</button>
         </div>
 
-        <!-- 主页面板：今日任务+成就概览+快速体重 -->
+        <!-- 主页：任务清单 + 近期成就预览 + 最近流水 -->
         <div class="panel" :class="{'active-panel': activeTab === 'home'}">
             <div class="card">
-                <div class="card-title">📋 今日任务清单</div>
+                <div class="card-title">📋 可重复完成·任务清单 (点击即得积分)</div>
                 <div class="grid-2">
                     <div v-for="task in tasks" :key="task.id" class="task-item">
-                        <span><strong>{{ task.name }}</strong>  +{{ task.points }}积分</span>
-                        <button v-if="!isTaskCompletedToday(task.id)" @click="completeTask(task)">完成 ✓</button>
-                        <span v-else class="badge">✅ 今日已完成</span>
+                        <span><strong>{{ task.name }}</strong>  +{{ task.points }} 积分</span>
+                        <button @click="completeTask(task)">完成 ✓</button>
                     </div>
                 </div>
                 <div class="flex-between" style="margin-top: 14px;">
-                    <span>💡 可在【设置】中自定义任务</span>
+                    <span>💡 每个任务【不限次数】随时可做，重复获得积分和累计次数</span>
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">🏆 近期成就 & 自定义成就</div>
+                <div class="card-title">🏆 近期成就 & 自动解锁</div>
                 <div class="grid-2">
-                    <div v-for="ach in achievements" :key="ach.id" class="achievement-item">
-                        <div><strong>{{ ach.name }}</strong><br><span style="font-size:0.75rem;">{{ ach.description }}</span></div>
+                    <div v-for="ach in achievements.slice(0,4)" :key="ach.id" class="achievement-item">
+                        <div><strong>{{ ach.name }}</strong><br><span style="font-size:0.7rem;">{{ ach.description }}</span></div>
                         <div><span v-if="ach.unlocked" style="color:#549d7a;">✨ 已解锁 +{{ ach.rewardPoints }}</span>
                         <span v-else class="badge">🔒 未达成</span></div>
                     </div>
@@ -285,15 +295,14 @@
             </div>
         </div>
 
-        <!-- 任务模块（完整列表） -->
+        <!-- 任务完整列表 -->
         <div class="panel" :class="{'active-panel': activeTab === 'tasks'}">
             <div class="card">
-                <div class="card-title">✨ 每日任务 & 积分奖励</div>
+                <div class="card-title">✨ 所有可重复任务 (无每日上限)</div>
                 <div v-for="task in tasks" :key="task.id" style="margin-bottom: 12px; background:#fdf6ec; border-radius: 28px; padding: 12px;">
                     <div class="flex-between">
-                        <span><b>{{ task.name }}</b>  +{{ task.points }} 积分</span>
-                        <button v-if="!isTaskCompletedToday(task.id)" @click="completeTask(task)">完成领取</button>
-                        <span v-else class="badge">已完成今日</span>
+                        <span><b>{{ task.name }}</b>  +{{ task.points }} 积分/次</span>
+                        <button @click="completeTask(task)">完成 +{{ task.points }}</button>
                     </div>
                 </div>
             </div>
@@ -302,28 +311,28 @@
         <!-- 成就模块 -->
         <div class="panel" :class="{'active-panel': activeTab === 'achievements'}">
             <div class="card">
-                <div class="card-title">🎖️ 自定成就（自动检测）</div>
+                <div class="card-title">🎖️ 自定义成就 (达成条件自动领积分)</div>
                 <div v-for="ach in achievements" :key="ach.id" class="achievement-item" style="margin-bottom: 12px;">
-                    <div><b>{{ ach.name }}</b> — {{ ach.description }}<br><small>奖励: {{ ach.rewardPoints }}积分</small></div>
+                    <div><b>{{ ach.name }}</b><br>{{ ach.description }}<br><small>🏆 奖励: {{ ach.rewardPoints }}积分</small></div>
                     <div><span v-if="ach.unlocked">🏅 已获得</span><span v-else>⏳ 进行中</span></div>
                 </div>
-                <div class="flex-between"><span>💡 成就条件支持: 总积分达到X / 累计完成任务次数达到Y / 体重减少达到Z kg</span></div>
+                <div class="flex-between"><span>🎯 成就条件支持: 累计积分 / 完成任务总次数 / 体重减少(kg)</span></div>
             </div>
         </div>
 
-        <!-- 流水账 + 统计（天/周/月切换） -->
+        <!-- 流水账 + 天/周/月统计 -->
         <div class="panel" :class="{'active-panel': activeTab === 'stats'}">
             <div class="card">
                 <div class="card-title">📆 积分流水账 & 体重统计</div>
                 <div class="stat-buttons">
-                    <button @click="statRange='day'" :class="{active: statRange==='day'}">按日</button>
-                    <button @click="statRange='week'" :class="{active: statRange==='week'}">按周</button>
-                    <button @click="statRange='month'" :class="{active: statRange==='month'}">按月</button>
+                    <button @click="statRange='day'" :class="{active: statRange==='day'}">📅 按日</button>
+                    <button @click="statRange='week'" :class="{active: statRange==='week'}">📆 按周</button>
+                    <button @click="statRange='month'" :class="{active: statRange==='month'}">🗓️ 按月</button>
                 </div>
                 <div>
-                    <h4>📊 统计摘要 ({{ statRange }} )</h4>
-                    <div>总积分变化: {{ statPointsChange }} 分 &nbsp;| 完成任务: {{ statTaskCount }} 次</div>
-                    <div>体重记录: 平均体重 {{ avgWeightInRange }} kg (范围有效记录)</div>
+                    <h4>📊 统计摘要 ({{ statRange }})</h4>
+                    <div>总积分变化: {{ statPointsChange }} 分 &nbsp;| 完成任务次数: {{ statTaskCount }} 次</div>
+                    <div>体重记录: 平均体重 {{ avgWeightInRange }} kg (范围内有效记录)</div>
                 </div>
                 <hr>
                 <h4>📜 流水明细</h4>
@@ -334,7 +343,7 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">⚖️ 体重历史流水</div>
+                <div class="card-title">⚖️ 体重历史记录</div>
                 <div v-for="rec in weightRecords.slice().reverse()" :key="rec.date" style="padding:6px 0;">
                     {{ rec.date }} : {{ rec.weight }} kg
                 </div>
@@ -344,16 +353,16 @@
         <!-- 自定义转盘 -->
         <div class="panel" :class="{'active-panel': activeTab === 'wheel'}">
             <div class="card">
-                <div class="card-title">🎡 好运轮盘 (消耗积分得积分)</div>
+                <div class="card-title">🎡 好运轮盘 (消耗积分赢积分)</div>
                 <div class="free-chance" style="margin-bottom: 16px;">
                     🎁 每日免费抽奖机会: <strong>{{ freeSpinLeftToday > 0 ? freeSpinLeftToday : '已用完' }}</strong>
                     <span v-if="freeSpinLeftToday>0"> (今日剩余 {{ freeSpinLeftToday }} 次免费)</span>
                 </div>
-                <div>每次转动消耗 <strong>{{ spinCost }}</strong> 积分，免费次数不消耗积分。</div>
+                <div>每次转动消耗 <strong>{{ spinCost }}</strong> 积分 (免费次数不消耗)</div>
                 <button class="wheel-btn" @click="spinWheel" style="margin: 16px 0;">🌀 转动轮盘</button>
-                <div v-if="lastSpinResult" class="badge" style="background:#ffe2b5;">结果: {{ lastSpinResult }}</div>
+                <div v-if="lastSpinResult" class="badge" style="background:#ffe2b5; font-size:1rem;">✨ {{ lastSpinResult }}</div>
                 <hr>
-                <div><b>⚙️ 转盘奖品概率自定义 (设置页可改)</b></div>
+                <div><b>⚙️ 转盘奖品概率 (设置页可自定义)</b></div>
                 <div v-for="item in spinItems" :key="item.id" style="font-size:0.85rem;">{{ item.name }} : 获得{{ item.pointsReward }}积分 (权重{{ item.probabilityWeight }})</div>
             </div>
         </div>
@@ -361,7 +370,7 @@
         <!-- 积分兑换奖励 -->
         <div class="panel" :class="{'active-panel': activeTab === 'shop'}">
             <div class="card">
-                <div class="card-title">🎁 积分兑换奖励 (自定义)</div>
+                <div class="card-title">🎁 积分兑换奖励 (自定义兑换项)</div>
                 <div class="grid-2">
                     <div v-for="reward in exchangeRewards" :key="reward.id" class="reward-item">
                         <span><strong>{{ reward.name }}</strong>  🪙 {{ reward.requiredPoints }}积分</span>
@@ -371,25 +380,25 @@
             </div>
         </div>
 
-        <!-- 全局设置面板 (自定义所有) -->
+        <!-- 设置：自定义所有 -->
         <div class="panel" :class="{'active-panel': activeTab === 'settings'}">
             <div class="card">
-                <div class="card-title">🛠️ 自定义设置中心 (所有数据实时保存)</div>
-                <div><b>📌 体重目标设置</b></div>
+                <div class="card-title">🛠️ 全局自定义中心 (数据自动保存)</div>
+                <div><b>📌 体重目标与当前</b></div>
                 <div class="flex-between" style="gap:12px; flex-wrap:wrap;">
                     <label>初始体重(kg): <input type="number" v-model.number="initialWeight" step="0.1" @change="saveAllData"></label>
                     <label>目标体重(kg): <input type="number" v-model.number="targetWeight" step="0.1" @change="saveAllData"></label>
-                    <label>当前体重(kg)可手动: <input type="number" v-model.number="currentWeightInput" step="0.1"></label>
-                    <button @click="syncCurrentWeight">更新当前体重</button>
+                    <label>当前体重(kg): <input type="number" v-model.number="currentWeightInput" step="0.1"></label>
+                    <button @click="syncCurrentWeight">同步体重并记录</button>
                 </div>
                 <hr>
-                <div><b>📝 自定义任务 (每日可完成)</b> <button @click="addTaskTemplate">+ 添加任务</button></div>
+                <div><b>📝 自定义任务 (可重复完成，点击即得积分)</b> <button @click="addTaskTemplate">+ 添加任务</button></div>
                 <div v-for="(task, idx) in tasks" :key="task.id" class="flex-between" style="margin:6px 0;">
-                    <input v-model="task.name" placeholder="任务名" style="width:130px;"> + <input type="number" v-model.number="task.points" style="width:70px;"> 积分
+                    <input v-model="task.name" placeholder="任务名" style="width:140px;"> + <input type="number" v-model.number="task.points" style="width:75px;"> 积分/次
                     <button @click="removeTask(task.id)">删除</button>
                 </div>
                 <hr>
-                <div><b>🏅 自定义成就 (条件达成自动给积分)</b> <button @click="addAchievementTemplate">+ 成就</button></div>
+                <div><b>🏅 自定义成就 (条件触发自动给积分)</b> <button @click="addAchievementTemplate">+ 新增成就</button></div>
                 <div v-for="ach in achievements" :key="ach.id" style="border-left:3px solid #ecd7b4; margin:12px 0; padding-left:10px;">
                     <div>名称: <input v-model="ach.name"> 描述: <input v-model="ach.description"></div>
                     <div>条件类型: 
@@ -401,11 +410,11 @@
                         <input type="number" v-model.number="ach.conditionValue" step="1">  奖励积分: <input type="number" v-model.number="ach.rewardPoints">
                         <button @click="removeAchievement(ach.id)">删除</button>
                     </div>
-                    <div v-if="ach.unlocked">✓ 已解锁状态(自动)</div>
+                    <div v-if="ach.unlocked">✅ 已解锁状态(自动)</div>
                 </div>
                 <hr>
-                <div><b>🎡 转盘配置 (消耗积分 / 奖池)</b> 消耗积分: <input type="number" v-model.number="spinCost" step="5"></div>
-                <div>奖池项目 (权重越大概率越高): <button @click="addSpinItem">+ 奖品</button></div>
+                <div><b>🎡 转盘配置 (消耗积分 / 奖池)</b> 每次转动消耗: <input type="number" v-model.number="spinCost" step="5"></div>
+                <div>奖池项目 (权重越大概率越高): <button @click="addSpinItem">+ 添加奖品</button></div>
                 <div v-for="(item, idx2) in spinItems" :key="item.id" class="probability-item">
                     <input v-model="item.name" style="width:100px;"> 奖励积分: <input type="number" v-model.number="item.pointsReward" style="width:70px;"> 权重: <input type="number" v-model.number="item.probabilityWeight" style="width:70px;" step="1">
                     <button @click="removeSpinItem(item.id)">删除</button>
@@ -417,14 +426,14 @@
                     <button @click="removeReward(reward.id)">删除</button>
                 </div>
                 <hr>
-                <button @click="resetDemoData" style="background:#f3cfb3;">重置演示数据(谨慎)</button>
-                <div class="badge" style="margin-top:10px;">所有自定义数据自动保存至浏览器</div>
+                <button @click="resetDemoData" style="background:#f3cfb3;">重置为默认数据 (积分/体重/任务成就)</button>
+                <div class="badge" style="margin-top:10px;">✅ 所有自定义数据自动保存在浏览器中，体重/积分实时同步。</div>
             </div>
         </div>
-        <footer>✨ 自用目标系统 | 淡色轻游戏化 | 每日任务/成就/转盘/自定义一切</footer>
+        <footer>✨ 可重复任务 · 成就自动触发 · 积分轮盘 · 全自定义淡色系统</footer>
     </div>
 
-    <!-- 体重记录弹窗模态框简单 -->
+    <!-- 体重记录弹窗 -->
     <div v-if="showWeightModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; z-index:1000;">
         <div style="background:#fffdf6; padding:24px; border-radius:36px; width:280px;">
             <h3>记录今日体重</h3>
@@ -436,62 +445,74 @@
 </div>
 
 <script>
-    const STORAGE_KEY = "GameGoalAppV2";
-    // 默认初始数据
+    const STORAGE_KEY = "GoalSystemV3_Repeatable";
+    // ========== 默认完全按照用户需求配置 ==========
     const defaultData = {
-        userPoints: 120,
-        initialWeight: 75,
-        targetWeight: 65,
-        currentWeight: 72,
-        weightRecords: [],
+        userPoints: 80,       // 初始稍微给一点，方便体验
+        initialWeight: 68,
+        targetWeight: 45,
+        currentWeight: 64,
+        weightRecords: [],    // 动态会加一条当前
+        // 任务列表（可重复，无每日限制）共8个
         tasks: [
-            { id: "t1", name: "晨间运动", points: 20 },
-            { id: "t2", name: "喝水2L", points: 10 },
-            { id: "t3", name: "健康早餐", points: 15 }
+            { id: "task_read", name: "📖 阅读 45min", points: 30 },
+            { id: "task_eng", name: "🇬🇧 英语 45min", points: 40 },
+            { id: "task_prep", name: "📝 备课 45min", points: 25 },
+            { id: "task_teach", name: "👩‍🏫 上课 45min", points: 50 },
+            { id: "task_code", name: "💻 编程 45min", points: 35 },
+            { id: "task_out", name: "🚶‍♀️ 出门活动", points: 100 },
+            { id: "task_hw", name: "✍️ 作业 45min", points: 35 },
+            { id: "task_rev", name: "🔄 复习 15min", points: 15 }
         ],
+        // 成就全新 (学霸,好学生,自律博主,自律先锋,减重高手,减重先锋,自律小白)
         achievements: [
-            { id: "a1", name: "健身新星", description: "累计积分达到100", conditionType: "totalPoints", conditionValue: 100, rewardPoints: 50, unlocked: false },
-            { id: "a2", name: "自律达人", description: "完成30次任务", conditionType: "totalTasks", conditionValue: 30, rewardPoints: 80, unlocked: false },
-            { id: "a3", name: "减重先锋", description: "体重减少3kg", conditionType: "weightLoss", conditionValue: 3, rewardPoints: 70, unlocked: false }
+            { id: "ach1", name: "🏅 学霸", description: "累计积分达到1000", conditionType: "totalPoints", conditionValue: 1000, rewardPoints: 150, unlocked: false },
+            { id: "ach2", name: "📚 好学生", description: "累计积分达到500", conditionType: "totalPoints", conditionValue: 500, rewardPoints: 80, unlocked: false },
+            { id: "ach3", name: "📸 自律博主", description: "完成任务累计100次", conditionType: "totalTasks", conditionValue: 100, rewardPoints: 300, unlocked: false },
+            { id: "ach4", name: "⚡ 自律先锋", description: "完成任务累计50次", conditionType: "totalTasks", conditionValue: 50, rewardPoints: 150, unlocked: false },
+            { id: "ach5", name: "🏋️ 减重高手", description: "体重减少10kg", conditionType: "weightLoss", conditionValue: 10, rewardPoints: 200, unlocked: false },
+            { id: "ach6", name: "🍃 减重先锋", description: "体重减少5kg", conditionType: "weightLoss", conditionValue: 5, rewardPoints: 120, unlocked: false },
+            { id: "ach7", name: "🌱 自律小白", description: "完成任务累计30次", conditionType: "totalTasks", conditionValue: 30, rewardPoints: 80, unlocked: false }
         ],
+        // 转盘奖池 (根据用户权重)
         spinItems: [
-            { id: "s1", name: "小确幸", pointsReward: 10, probabilityWeight: 40 },
-            { id: "s2", name: "大吉大利", pointsReward: 30, probabilityWeight: 25 },
-            { id: "s3", name: "欧皇时刻", pointsReward: 80, probabilityWeight: 10 },
-            { id: "s4", name: "谢谢参与", pointsReward: 0, probabilityWeight: 25 }
+            { id: "spin1", name: "🍀 小确幸", pointsReward: 20, probabilityWeight: 30 },
+            { id: "spin2", name: "🎉 大吉大利", pointsReward: 50, probabilityWeight: 25 },
+            { id: "spin3", name: "👑 欧皇时刻", pointsReward: 100, probabilityWeight: 10 },
+            { id: "spin4", name: "🙏 谢谢参与", pointsReward: 0, probabilityWeight: 35 }
         ],
-        spinCost: 15,
+        spinCost: 10,            // 每次转动消耗10积分
+        // 兑换奖励
         exchangeRewards: [
-            { id: "e1", name: "奶茶免罪券", requiredPoints: 60 },
-            { id: "e2", name: "电影票抵用", requiredPoints: 150 }
+            { id: "ex1", name: "🎮 游戏1h", requiredPoints: 100 },
+            { id: "ex2", name: "📖 小说1h", requiredPoints: 75 },
+            { id: "ex3", name: "📱 小红书1h", requiredPoints: 100 },
+            { id: "ex4", name: "😴 午觉30min", requiredPoints: 20 }
         ],
         ledger: [],
-        taskCompletions: [], // {taskId, date}
-        freeSpinDate: null,   // 上次免费日期
-        freeSpinUsedToday: 0, // 今日已经使用免费次数限制1次
-        totalTaskCompleteCount: 0, // 累计完成任务总次数用于成就
+        freeSpinDate: null,
+        freeSpinUsedToday: 0,
+        totalTaskCompleteCount: 0,   // 累计完成任务总次数（成就用）
     };
-    
-    // 辅助函数生成ID
+
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
 
     new Vue({
         el: '#app',
         data: {
             activeTab: 'home',
-            tabs: [{key:'home',label:'🏠 主页'},{key:'tasks',label:'📋 任务'},{key:'achievements',label:'🏅 成就'},{key:'stats',label:'📈 流水/统计'},{key:'wheel',label:'🎡 转盘'},{key:'shop',label:'🎁 兑换'},{key:'settings',label:'⚙️ 设置'}],
+            tabs: [{key:'home',label:'🏠 主页'},{key:'tasks',label:'📋 任务库'},{key:'achievements',label:'🏅 成就'},{key:'stats',label:'📈 流水/统计'},{key:'wheel',label:'🎡 转盘'},{key:'shop',label:'🎁 兑换'},{key:'settings',label:'⚙️ 设置'}],
             userPoints: 0,
-            initialWeight: 70,
-            targetWeight: 60,
-            currentWeight: 70,
+            initialWeight: 68,
+            targetWeight: 45,
+            currentWeight: 64,
             weightRecords: [],
             tasks: [],
             achievements: [],
             spinItems: [],
-            spinCost: 15,
+            spinCost: 10,
             exchangeRewards: [],
             ledger: [],
-            taskCompletions: [],
             freeSpinDate: null,
             freeSpinUsedToday: 0,
             totalTaskCompleteCount: 0,
@@ -499,7 +520,7 @@
             showWeightModal: false,
             tempWeight: null,
             lastSpinResult: '',
-            currentWeightInput: 0,
+            currentWeightInput: 64,
         },
         computed: {
             weightProgressPercent() {
@@ -511,7 +532,7 @@
                 if (percent > 100) percent = 100;
                 return percent;
             },
-            recentLedger() { return [...this.ledger].reverse().slice(0,6); },
+            recentLedger() { return [...this.ledger].reverse().slice(0,8); },
             filteredLedger() {
                 let now = new Date();
                 return this.ledger.filter(entry => {
@@ -561,17 +582,12 @@
         },
         methods: {
             formatDate(d) { return new Date(d).toLocaleDateString(); },
-            isTaskCompletedToday(taskId) {
-                let today = new Date().toDateString();
-                return this.taskCompletions.some(c => c.taskId === taskId && new Date(c.date).toDateString() === today);
-            },
+            // 可重复完成: 无每日限制，直接加积分 + 计数 + 流水
             completeTask(task) {
-                if (this.isTaskCompletedToday(task.id)) return;
                 this.userPoints += task.points;
-                this.totalTaskCompleteCount ++;
+                this.totalTaskCompleteCount += 1;
                 let record = { id: genId(), date: new Date().toISOString(), type: 'task', description: `完成任务: ${task.name}`, pointsChange: task.points };
                 this.ledger.push(record);
-                this.taskCompletions.push({ taskId: task.id, date: new Date().toISOString() });
                 this.saveAllData();
                 this.checkAchievements();
             },
@@ -593,7 +609,18 @@
                     this.checkAchievements();
                 }
             },
-            syncCurrentWeight() { if(this.currentWeightInput >0) this.currentWeight = this.currentWeightInput; this.saveAllData(); },
+            syncCurrentWeight() { 
+                if(this.currentWeightInput > 0) {
+                    let newWeight = this.currentWeightInput;
+                    let dateStr = new Date().toISOString().slice(0,10);
+                    let existing = this.weightRecords.find(r => r.date === dateStr);
+                    if (existing) existing.weight = newWeight;
+                    else this.weightRecords.push({ date: dateStr, weight: newWeight });
+                    this.currentWeight = newWeight;
+                    this.saveAllData();
+                    this.checkAchievements();
+                }
+            },
             updateProgressWeight() { this.saveAllData(); },
             spinWheel() {
                 let today = new Date().toDateString();
@@ -601,7 +628,6 @@
                 let cost = isFree ? 0 : this.spinCost;
                 if (!isFree && this.userPoints < this.spinCost) { alert("积分不足，无法转动"); return; }
                 if (!isFree) { this.userPoints -= cost; this.addLedger('spin', `转盘消耗${cost}积分`, -cost); }
-                // 抽奖逻辑依据权重
                 let totalWeight = this.spinItems.reduce((s,i)=> s + i.probabilityWeight, 0);
                 let rand = Math.random() * totalWeight;
                 let accum = 0;
@@ -618,7 +644,6 @@
                     this.addLedger('wheel', `转盘抽中: ${selected.name} 无积分`, 0);
                 }
                 this.lastSpinResult = `${selected.name} 获得 ${rewardPoints} 积分`;
-                // 更新免费标记
                 if(isFree) {
                     if(this.freeSpinDate !== today) { this.freeSpinDate = today; this.freeSpinUsedToday = 0; }
                     this.freeSpinUsedToday += 1;
@@ -652,6 +677,7 @@
                 }
                 if(updated) this.saveAllData();
             },
+            // 设置模块方法
             addTaskTemplate() { this.tasks.push({ id: genId(), name: "新任务", points: 10 }); },
             removeTask(id) { this.tasks = this.tasks.filter(t=>t.id!==id); },
             addAchievementTemplate() { this.achievements.push({ id: genId(), name: "新成就", description: "条件说明", conditionType:"totalPoints", conditionValue:100, rewardPoints:30, unlocked:false }); },
@@ -662,7 +688,15 @@
             removeReward(id) { this.exchangeRewards = this.exchangeRewards.filter(r=>r.id!==id); },
             resetDemoData() {
                 let def = JSON.parse(JSON.stringify(defaultData));
+                def.weightRecords = []; // 清空并添加一条当前体重记录确保
+                def.currentWeight = 64;
+                def.initialWeight = 68;
+                def.targetWeight = 45;
+                def.userPoints = 80;
+                def.totalTaskCompleteCount = 0;
                 Object.assign(this, def);
+                // 补一条体重记录
+                if(this.weightRecords.length === 0) this.weightRecords.push({ date: new Date().toISOString().slice(0,10), weight: this.currentWeight });
                 this.currentWeightInput = this.currentWeight;
                 this.saveAllData();
                 this.checkAchievements();
@@ -671,7 +705,7 @@
                 const store = {
                     userPoints: this.userPoints, initialWeight: this.initialWeight, targetWeight: this.targetWeight, currentWeight: this.currentWeight,
                     weightRecords: this.weightRecords, tasks: this.tasks, achievements: this.achievements, spinItems: this.spinItems,
-                    spinCost: this.spinCost, exchangeRewards: this.exchangeRewards, ledger: this.ledger, taskCompletions: this.taskCompletions,
+                    spinCost: this.spinCost, exchangeRewards: this.exchangeRewards, ledger: this.ledger,
                     freeSpinDate: this.freeSpinDate, freeSpinUsedToday: this.freeSpinUsedToday, totalTaskCompleteCount: this.totalTaskCompleteCount
                 };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
@@ -684,6 +718,7 @@
                     this.currentWeightInput = this.currentWeight;
                 } else {
                     Object.assign(this, JSON.parse(JSON.stringify(defaultData)));
+                    if(this.weightRecords.length === 0) this.weightRecords.push({ date: new Date().toISOString().slice(0,10), weight: this.currentWeight });
                     this.currentWeightInput = this.currentWeight;
                 }
                 this.checkAchievements();
